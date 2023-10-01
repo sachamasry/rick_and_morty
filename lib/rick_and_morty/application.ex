@@ -1,0 +1,38 @@
+defmodule RickAndMorty.Application do
+  # See https://hexdocs.pm/elixir/Application.html
+  # for more information on OTP Applications
+  @moduledoc false
+
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children = [
+      # Start the Telemetry supervisor
+      RickAndMortyWeb.Telemetry,
+      # Start the Ecto repository
+      RickAndMorty.Repo,
+      # Start the PubSub system
+      {Phoenix.PubSub, name: RickAndMorty.PubSub},
+      # Start Finch
+      {Finch, name: RickAndMorty.Finch},
+      # Start the Endpoint (http/https)
+      RickAndMortyWeb.Endpoint
+      # Start a worker by calling: RickAndMorty.Worker.start_link(arg)
+      # {RickAndMorty.Worker, arg}
+    ]
+
+    # See https://hexdocs.pm/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: RickAndMorty.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  # Tell Phoenix to update the endpoint configuration
+  # whenever the application is updated.
+  @impl true
+  def config_change(changed, _new, removed) do
+    RickAndMortyWeb.Endpoint.config_change(changed, removed)
+    :ok
+  end
+end

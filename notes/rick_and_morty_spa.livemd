@@ -1,0 +1,1963 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Rick and Morty SPA
+
+```elixir
+Mix.install([
+  {:req, "~> 0.4.3"},
+  {:kino_explorer, "~> 0.1.4"}
+])
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Resolving Hex dependencies...
+Resolution completed in 0.935s
+New:
+  aws_signature 0.3.1
+  castore 1.0.3
+  explorer 0.7.1
+  finch 0.16.0
+  fss 0.1.1
+  hpax 0.1.2
+  jason 1.4.1
+  kino 0.10.0
+  kino_explorer 0.1.11
+  mime 2.0.5
+  mint 1.5.1
+  nimble_options 1.0.2
+  nimble_pool 1.0.0
+  req 0.4.3
+  rustler_precompiled 0.7.0
+  table 0.1.2
+  table_rex 4.0.0
+  telemetry 1.2.1
+* Getting req (Hex package)
+* Getting kino_explorer (Hex package)
+* Getting explorer (Hex package)
+* Getting kino (Hex package)
+* Getting table (Hex package)
+* Getting aws_signature (Hex package)
+* Getting castore (Hex package)
+* Getting fss (Hex package)
+* Getting rustler_precompiled (Hex package)
+* Getting table_rex (Hex package)
+* Getting finch (Hex package)
+* Getting jason (Hex package)
+* Getting mime (Hex package)
+* Getting mint (Hex package)
+* Getting nimble_options (Hex package)
+* Getting nimble_pool (Hex package)
+* Getting telemetry (Hex package)
+* Getting hpax (Hex package)
+===> Analyzing applications...
+===> Compiling aws_signature
+==> table
+Compiling 5 files (.ex)
+Generated table app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> kino
+Compiling 41 files (.ex)
+Generated kino app
+===> Analyzing applications...
+===> Compiling telemetry
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> fss
+Compiling 4 files (.ex)
+Generated fss app
+==> table_rex
+Compiling 7 files (.ex)
+Generated table_rex app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> castore
+Compiling 1 file (.ex)
+Generated castore app
+==> rustler_precompiled
+Compiling 4 files (.ex)
+Generated rustler_precompiled app
+==> explorer
+Compiling 24 files (.ex)
+
+19:58:56.208 [debug] Copying NIF from cache and extracting to /Users/sacha/Library/Caches/mix/installs/elixir-1.15.2-erts-14.0.2/ce71214e2701037d0080231f2d64b8c6/_build/dev/lib/explorer/priv/native/libexplorer-v0.7.1-nif-2.15-x86_64-apple-darwin.so
+Generated explorer app
+==> kino_explorer
+Compiling 4 files (.ex)
+Generated kino_explorer app
+==> mint
+Compiling 1 file (.erl)
+Compiling 19 files (.ex)
+Generated mint app
+==> finch
+Compiling 13 files (.ex)
+warning: Logger.warn/1 is deprecated. Use Logger.warning/2 instead
+  lib/finch/http2/pool.ex:362: Finch.HTTP2.Pool.connected/3
+
+warning: Logger.warn/1 is deprecated. Use Logger.warning/2 instead
+  lib/finch/http2/pool.ex:460: Finch.HTTP2.Pool.connected_read_only/3
+
+Generated finch app
+==> req
+Compiling 6 files (.ex)
+Generated req app
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Introduction
+
+An exercise in consuming the Rick and Morty API, and presenting it in the form of a single page application (SPA), in Elixir LiveView.
+
+## Preparing to query the API
+
+To simplify querying the Rick and Morty API, we will start with the _base_ API, the first part of the URL which is common to all requests, which is "https://rickandmortyapi.com/api" ([Introduction: REST](https://rickandmortyapi.com/documentation/#rest)).
+
+Using the _base_ URI, we simply concatenate the specific part of the API endpoint to the generic, to get the full API endpoint. For example, to look up the list of characters, we concatenate `/characters` ([Character: Get all characters](https://rickandmortyapi.com/documentation/#get-all-characters)) to the base URI to obtain the endpoint to query for character information.
+
+To make this resource reusable, we save the endpoint URI string to the `characters_endpoint` variable for later use.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+rick_and_morty_api_base_url = "https://rickandmortyapi.com/api/"
+characters_endpoint = rick_and_morty_api_base_url <> "character"
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+"https://rickandmortyapi.com/api/character"
+```
+
+## Making our first request
+
+With the endpoint URI defined, we can now query the API for a list of all characters. We will use the [`Req`](https://hexdocs.pm/req/readme.html) library to make all our API requests, specifically the `Req.get/1` function, which will make a `GET` HTTP request.
+
+We are storing the result of the endpoint query to the `character_response` variable for later use.
+
+```elixir
+characters_response = Req.get(characters_endpoint)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok,
+ %Req.Response{
+   status: 200,
+   headers: %{
+     "access-control-allow-origin" => ["*"],
+     "age" => ["5821"],
+     "cache-control" => ["max-age=259200"],
+     "content-length" => ["19496"],
+     "content-type" => ["application/json; charset=utf-8"],
+     "date" => ["Sun, 01 Oct 2023 18:01:23 GMT"],
+     "etag" => ["W/\"4c28-8Xn6OSgPYZqE/r+q8L2TTeK0Efo\""],
+     "expires" => ["Wed, 04 Oct 2023 16:24:22 GMT"],
+     "server" => ["Netlify"],
+     "strict-transport-security" => ["max-age=31536000"],
+     "vary" => ["Accept-Encoding"],
+     "x-nf-request-id" => ["01HBP6DW8DYE714RZ08FXD8VNP"],
+     "x-powered-by" => ["Express"]
+   },
+   body: %{
+     "info" => %{
+       "count" => 826,
+       "next" => "https://rickandmortyapi.com/api/character?page=2",
+       "pages" => 42,
+       "prev" => nil
+     },
+     "results" => [
+       %{
+         "created" => "2017-11-04T18:48:46.250Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/1",
+          "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3",
+          "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5",
+          "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7",
+          "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9",
+          "https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/11",
+          "https://rickandmortyapi.com/api/episode/12",
+          "https://rickandmortyapi.com/api/episode/13",
+          "https://rickandmortyapi.com/api/episode/14",
+          "https://rickandmortyapi.com/api/episode/15",
+          "https://rickandmortyapi.com/api/episode/16",
+          "https://rickandmortyapi.com/api/episode/17",
+          "https://rickandmortyapi.com/api/episode/18",
+          "https://rickandmortyapi.com/api/episode/19",
+          "https://rickandmortyapi.com/api/episode/20",
+          "https://rickandmortyapi.com/api/episode/21",
+          "https://rickandmortyapi.com/api/episode/22",
+          "https://rickandmortyapi.com/api/episode/23",
+          "https://rickandmortyapi.com/api/episode/24",
+          "https://rickandmortyapi.com/api/episode/25",
+          "https://rickandmortyapi.com/api/episode/26",
+          "https://rickandmortyapi.com/api/episode/27",
+          "https://rickandmortyapi.com/api/episode/28",
+          "https://rickandmortyapi.com/api/episode/29",
+          "https://rickandmortyapi.com/api/episode/30",
+          "https://rickandmortyapi.com/api/episode/31",
+          "https://rickandmortyapi.com/api/episode/32",
+          "https://rickandmortyapi.com/api/episode/33",
+          "https://rickandmortyapi.com/api/episode/34",
+          "https://rickandmortyapi.com/api/episode/35",
+          "https://rickandmortyapi.com/api/episode/36",
+          "https://rickandmortyapi.com/api/episode/37",
+          "https://rickandmortyapi.com/api/episode/38",
+          "https://rickandmortyapi.com/api/episode/39",
+          "https://rickandmortyapi.com/api/episode/40", ...],
+         "gender" => "Male",
+         "id" => 1,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+         "location" => %{
+           "name" => "Citadel of Ricks",
+           "url" => "https://rickandmortyapi.com/api/location/3"
+         },
+         "name" => "Rick Sanchez",
+         "origin" => %{
+           "name" => "Earth (C-137)",
+           "url" => "https://rickandmortyapi.com/api/location/1"
+         },
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/1"
+       },
+       %{
+         "created" => "2017-11-04T18:50:21.651Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/1",
+          "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3",
+          "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5",
+          "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7",
+          "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9",
+          "https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/11",
+          "https://rickandmortyapi.com/api/episode/12",
+          "https://rickandmortyapi.com/api/episode/13",
+          "https://rickandmortyapi.com/api/episode/14",
+          "https://rickandmortyapi.com/api/episode/15",
+          "https://rickandmortyapi.com/api/episode/16",
+          "https://rickandmortyapi.com/api/episode/17",
+          "https://rickandmortyapi.com/api/episode/18",
+          "https://rickandmortyapi.com/api/episode/19",
+          "https://rickandmortyapi.com/api/episode/20",
+          "https://rickandmortyapi.com/api/episode/21",
+          "https://rickandmortyapi.com/api/episode/22",
+          "https://rickandmortyapi.com/api/episode/23",
+          "https://rickandmortyapi.com/api/episode/24",
+          "https://rickandmortyapi.com/api/episode/25",
+          "https://rickandmortyapi.com/api/episode/26",
+          "https://rickandmortyapi.com/api/episode/27",
+          "https://rickandmortyapi.com/api/episode/28",
+          "https://rickandmortyapi.com/api/episode/29",
+          "https://rickandmortyapi.com/api/episode/30",
+          "https://rickandmortyapi.com/api/episode/31",
+          "https://rickandmortyapi.com/api/episode/32",
+          "https://rickandmortyapi.com/api/episode/33",
+          "https://rickandmortyapi.com/api/episode/34",
+          "https://rickandmortyapi.com/api/episode/35",
+          "https://rickandmortyapi.com/api/episode/36",
+          "https://rickandmortyapi.com/api/episode/37",
+          "https://rickandmortyapi.com/api/episode/38",
+          "https://rickandmortyapi.com/api/episode/39", ...],
+         "gender" => "Male",
+         "id" => 2,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+         "location" => %{
+           "name" => "Citadel of Ricks",
+           "url" => "https://rickandmortyapi.com/api/location/3"
+         },
+         "name" => "Morty Smith",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/2"
+       },
+       %{
+         "created" => "2017-11-04T19:09:56.428Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/6",
+          "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+          "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/11",
+          "https://rickandmortyapi.com/api/episode/12",
+          "https://rickandmortyapi.com/api/episode/14",
+          "https://rickandmortyapi.com/api/episode/15",
+          "https://rickandmortyapi.com/api/episode/16",
+          "https://rickandmortyapi.com/api/episode/17",
+          "https://rickandmortyapi.com/api/episode/18",
+          "https://rickandmortyapi.com/api/episode/19",
+          "https://rickandmortyapi.com/api/episode/20",
+          "https://rickandmortyapi.com/api/episode/21",
+          "https://rickandmortyapi.com/api/episode/22",
+          "https://rickandmortyapi.com/api/episode/23",
+          "https://rickandmortyapi.com/api/episode/24",
+          "https://rickandmortyapi.com/api/episode/25",
+          "https://rickandmortyapi.com/api/episode/26",
+          "https://rickandmortyapi.com/api/episode/27",
+          "https://rickandmortyapi.com/api/episode/29",
+          "https://rickandmortyapi.com/api/episode/30",
+          "https://rickandmortyapi.com/api/episode/31",
+          "https://rickandmortyapi.com/api/episode/32",
+          "https://rickandmortyapi.com/api/episode/33",
+          "https://rickandmortyapi.com/api/episode/34",
+          "https://rickandmortyapi.com/api/episode/35",
+          "https://rickandmortyapi.com/api/episode/36",
+          "https://rickandmortyapi.com/api/episode/38",
+          "https://rickandmortyapi.com/api/episode/39",
+          "https://rickandmortyapi.com/api/episode/40",
+          "https://rickandmortyapi.com/api/episode/41",
+          "https://rickandmortyapi.com/api/episode/42",
+          "https://rickandmortyapi.com/api/episode/43",
+          "https://rickandmortyapi.com/api/episode/44",
+          "https://rickandmortyapi.com/api/episode/45",
+          "https://rickandmortyapi.com/api/episode/46", ...],
+         "gender" => "Female",
+         "id" => 3,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Summer Smith",
+         "origin" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/3"
+       },
+       %{
+         "created" => "2017-11-04T19:22:43.665Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/6",
+          "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+          "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/11",
+          "https://rickandmortyapi.com/api/episode/12",
+          "https://rickandmortyapi.com/api/episode/14",
+          "https://rickandmortyapi.com/api/episode/15",
+          "https://rickandmortyapi.com/api/episode/16",
+          "https://rickandmortyapi.com/api/episode/18",
+          "https://rickandmortyapi.com/api/episode/19",
+          "https://rickandmortyapi.com/api/episode/20",
+          "https://rickandmortyapi.com/api/episode/21",
+          "https://rickandmortyapi.com/api/episode/22",
+          "https://rickandmortyapi.com/api/episode/23",
+          "https://rickandmortyapi.com/api/episode/24",
+          "https://rickandmortyapi.com/api/episode/25",
+          "https://rickandmortyapi.com/api/episode/26",
+          "https://rickandmortyapi.com/api/episode/27",
+          "https://rickandmortyapi.com/api/episode/28",
+          "https://rickandmortyapi.com/api/episode/29",
+          "https://rickandmortyapi.com/api/episode/30",
+          "https://rickandmortyapi.com/api/episode/31",
+          "https://rickandmortyapi.com/api/episode/32",
+          "https://rickandmortyapi.com/api/episode/33",
+          "https://rickandmortyapi.com/api/episode/34",
+          "https://rickandmortyapi.com/api/episode/35",
+          "https://rickandmortyapi.com/api/episode/36",
+          "https://rickandmortyapi.com/api/episode/38",
+          "https://rickandmortyapi.com/api/episode/39",
+          "https://rickandmortyapi.com/api/episode/40",
+          "https://rickandmortyapi.com/api/episode/41",
+          "https://rickandmortyapi.com/api/episode/42",
+          "https://rickandmortyapi.com/api/episode/43",
+          "https://rickandmortyapi.com/api/episode/44",
+          "https://rickandmortyapi.com/api/episode/45", ...],
+         "gender" => "Female",
+         "id" => 4,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Beth Smith",
+         "origin" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/4"
+       },
+       %{
+         "created" => "2017-11-04T19:26:56.301Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/6",
+          "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+          "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/11",
+          "https://rickandmortyapi.com/api/episode/12",
+          "https://rickandmortyapi.com/api/episode/13",
+          "https://rickandmortyapi.com/api/episode/14",
+          "https://rickandmortyapi.com/api/episode/15",
+          "https://rickandmortyapi.com/api/episode/16",
+          "https://rickandmortyapi.com/api/episode/18",
+          "https://rickandmortyapi.com/api/episode/19",
+          "https://rickandmortyapi.com/api/episode/20",
+          "https://rickandmortyapi.com/api/episode/21",
+          "https://rickandmortyapi.com/api/episode/22",
+          "https://rickandmortyapi.com/api/episode/23",
+          "https://rickandmortyapi.com/api/episode/26",
+          "https://rickandmortyapi.com/api/episode/29",
+          "https://rickandmortyapi.com/api/episode/30",
+          "https://rickandmortyapi.com/api/episode/31",
+          "https://rickandmortyapi.com/api/episode/32",
+          "https://rickandmortyapi.com/api/episode/33",
+          "https://rickandmortyapi.com/api/episode/35",
+          "https://rickandmortyapi.com/api/episode/36",
+          "https://rickandmortyapi.com/api/episode/38",
+          "https://rickandmortyapi.com/api/episode/39",
+          "https://rickandmortyapi.com/api/episode/40",
+          "https://rickandmortyapi.com/api/episode/41",
+          "https://rickandmortyapi.com/api/episode/42",
+          "https://rickandmortyapi.com/api/episode/43",
+          "https://rickandmortyapi.com/api/episode/44",
+          "https://rickandmortyapi.com/api/episode/45",
+          "https://rickandmortyapi.com/api/episode/46",
+          "https://rickandmortyapi.com/api/episode/47",
+          "https://rickandmortyapi.com/api/episode/48", ...],
+         "gender" => "Male",
+         "id" => 5,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Jerry Smith",
+         "origin" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/5"
+       },
+       %{
+         "created" => "2017-11-04T19:50:28.250Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/27"],
+         "gender" => "Female",
+         "id" => 6,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+         "location" => %{
+           "name" => "Abadango",
+           "url" => "https://rickandmortyapi.com/api/location/2"
+         },
+         "name" => "Abadango Cluster Princess",
+         "origin" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"},
+         "species" => "Alien",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/6"
+       },
+       %{
+         "created" => "2017-11-04T19:59:20.523Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/11"],
+         "gender" => "Male",
+         "id" => 7,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+         "location" => %{
+           "name" => "Testicle Monster Dimension",
+           "url" => "https://rickandmortyapi.com/api/location/21"
+         },
+         "name" => "Abradolf Lincler",
+         "origin" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "species" => "Human",
+         "status" => "unknown",
+         "type" => "Genetic experiment",
+         "url" => "https://rickandmortyapi.com/api/character/7"
+       },
+       %{
+         "created" => "2017-11-04T20:03:34.737Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/28"],
+         "gender" => "Male",
+         "id" => 8,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+         "location" => %{
+           "name" => "Citadel of Ricks",
+           "url" => "https://rickandmortyapi.com/api/location/3"
+         },
+         "name" => "Adjudicator Rick",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Human",
+         "status" => "Dead",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/8"
+       },
+       %{
+         "created" => "2017-11-04T20:06:54.976Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/24"],
+         "gender" => "Male",
+         "id" => 9,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Agency Director",
+         "origin" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "species" => "Human",
+         "status" => "Dead",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/9"
+       },
+       %{
+         "created" => "2017-11-04T20:19:09.017Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/25"],
+         "gender" => "Male",
+         "id" => 10,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+         "location" => %{
+           "name" => "Worldender's lair",
+           "url" => "https://rickandmortyapi.com/api/location/4"
+         },
+         "name" => "Alan Rails",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Human",
+         "status" => "Dead",
+         "type" => "Superhuman (Ghost trains summoner)",
+         "url" => "https://rickandmortyapi.com/api/character/10"
+       },
+       %{
+         "created" => "2017-11-04T20:20:20.965Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/12"],
+         "gender" => "Male",
+         "id" => 11,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Albert Einstein",
+         "origin" => %{
+           "name" => "Earth (C-137)",
+           "url" => "https://rickandmortyapi.com/api/location/1"
+         },
+         "species" => "Human",
+         "status" => "Dead",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/11"
+       },
+       %{
+         "created" => "2017-11-04T20:32:33.144Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/3"],
+         "gender" => "Male",
+         "id" => 12,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
+         "location" => %{
+           "name" => "Anatomy Park",
+           "url" => "https://rickandmortyapi.com/api/location/5"
+         },
+         "name" => "Alexander",
+         "origin" => %{
+           "name" => "Earth (C-137)",
+           "url" => "https://rickandmortyapi.com/api/location/1"
+         },
+         "species" => "Human",
+         "status" => "Dead",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/12"
+       },
+       %{
+         "created" => "2017-11-04T20:33:30.779Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/31"],
+         "gender" => "unknown",
+         "id" => 13,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Alien Googah",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Alien",
+         "status" => "unknown",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/13"
+       },
+       %{
+         "created" => "2017-11-04T20:51:31.373Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+         "gender" => "Male",
+         "id" => 14,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
+         "location" => %{
+           "name" => "Citadel of Ricks",
+           "url" => "https://rickandmortyapi.com/api/location/3"
+         },
+         "name" => "Alien Morty",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Alien",
+         "status" => "unknown",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/14"
+       },
+       %{
+         "created" => "2017-11-04T20:56:13.215Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+         "gender" => "Male",
+         "id" => 15,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
+         "location" => %{
+           "name" => "Citadel of Ricks",
+           "url" => "https://rickandmortyapi.com/api/location/3"
+         },
+         "name" => "Alien Rick",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Alien",
+         "status" => "unknown",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/15"
+       },
+       %{
+         "created" => "2017-11-04T21:12:45.235Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/15"],
+         "gender" => "Male",
+         "id" => 16,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
+         "location" => %{
+           "name" => "Earth (Replacement Dimension)",
+           "url" => "https://rickandmortyapi.com/api/location/20"
+         },
+         "name" => "Amish Cyborg",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Alien",
+         "status" => "Dead",
+         "type" => "Parasite",
+         "url" => "https://rickandmortyapi.com/api/character/16"
+       },
+       %{
+         "created" => "2017-11-04T22:21:24.481Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/3"],
+         "gender" => "Female",
+         "id" => 17,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+         "location" => %{
+           "name" => "Anatomy Park",
+           "url" => "https://rickandmortyapi.com/api/location/5"
+         },
+         "name" => "Annie",
+         "origin" => %{
+           "name" => "Earth (C-137)",
+           "url" => "https://rickandmortyapi.com/api/location/1"
+         },
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "",
+         "url" => "https://rickandmortyapi.com/api/character/17"
+       },
+       %{
+         "created" => "2017-11-04T22:25:29.008Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/10",
+          "https://rickandmortyapi.com/api/episode/28"],
+         "gender" => "Male",
+         "id" => 18,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
+         "location" => %{
+           "name" => "Citadel of Ricks",
+           "url" => "https://rickandmortyapi.com/api/location/3"
+         },
+         "name" => "Antenna Morty",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Human",
+         "status" => "Alive",
+         "type" => "Human with antennae",
+         "url" => "https://rickandmortyapi.com/api/character/18"
+       },
+       %{
+         "created" => "2017-11-04T22:28:13.756Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+         "gender" => "Male",
+         "id" => 19,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
+         "location" => %{"name" => "unknown", "url" => ""},
+         "name" => "Antenna Rick",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Human",
+         "status" => "unknown",
+         "type" => "Human with antennae",
+         "url" => "https://rickandmortyapi.com/api/character/19"
+       },
+       %{
+         "created" => "2017-11-04T22:34:53.659Z",
+         "episode" => ["https://rickandmortyapi.com/api/episode/8"],
+         "gender" => "Male",
+         "id" => 20,
+         "image" => "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
+         "location" => %{
+           "name" => "Interdimensional Cable",
+           "url" => "https://rickandmortyapi.com/api/location/6"
+         },
+         "name" => "Ants in my Eyes Johnson",
+         "origin" => %{"name" => "unknown", "url" => ""},
+         "species" => "Human",
+         "status" => "unknown",
+         "type" => "Human with ants in his eyes",
+         "url" => "https://rickandmortyapi.com/api/character/20"
+       }
+     ]
+   },
+   trailers: %{},
+   private: %{}
+ }}
+```
+
+The full response to our request comes back in a `{:status, %Req.Response{...}}` tuple. As long as `:status` comes back as `:ok`, we can proceed to deconctruct `%Req.Response{}`, which contains the following key-value pairs: `status`, `headers`, `body`, and a couple more that aren't relevant. `status` is the HTTP response status code ([HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)); all we care about is a `200` response status, signifying a successful response. We also don't need to concern ourselves with the response `headers`, so we will ignore that key as well.
+
+We do want the `body`, so we will pattern-match the `body` key inside the `%Req.Response{}` object.
+
+## Getting a list of all Rick and Morty characters from the API
+
+```elixir
+{:ok, %{body: body}} = characters_response
+body
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  "info" => %{
+    "count" => 826,
+    "next" => "https://rickandmortyapi.com/api/character?page=2",
+    "pages" => 42,
+    "prev" => nil
+  },
+  "results" => [
+    %{
+      "created" => "2017-11-04T18:48:46.250Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/1",
+       "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3",
+       "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5",
+       "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7",
+       "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9",
+       "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11",
+       "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27",
+       "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29",
+       "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31",
+       "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33",
+       "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35",
+       "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       ...],
+      "gender" => "Male",
+      "id" => 1,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Rick Sanchez",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/1"
+    },
+    %{
+      "created" => "2017-11-04T18:50:21.651Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/1",
+       "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3",
+       "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5",
+       "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7",
+       "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9",
+       "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11",
+       "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27",
+       "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29",
+       "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31",
+       "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33",
+       "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35",
+       "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", ...],
+      "gender" => "Male",
+      "id" => 2,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Morty Smith",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/2"
+    },
+    %{
+      "created" => "2017-11-04T19:09:56.428Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/6",
+       "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+       "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27",
+       "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30",
+       "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32",
+       "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34",
+       "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47",
+       "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49",
+       "https://rickandmortyapi.com/api/episode/51"],
+      "gender" => "Female",
+      "id" => 3,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Summer Smith",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/3"
+    },
+    %{
+      "created" => "2017-11-04T19:22:43.665Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/6",
+       "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+       "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/18",
+       "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20",
+       "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22",
+       "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24",
+       "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26",
+       "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/28",
+       "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30",
+       "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32",
+       "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34",
+       "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47",
+       "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49",
+       "https://rickandmortyapi.com/api/episode/51"],
+      "gender" => "Female",
+      "id" => 4,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Beth Smith",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/4"
+    },
+    %{
+      "created" => "2017-11-04T19:26:56.301Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/6",
+       "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+       "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12",
+       "https://rickandmortyapi.com/api/episode/13", "https://rickandmortyapi.com/api/episode/14",
+       "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/29",
+       "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31",
+       "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33",
+       "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47",
+       "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49",
+       "https://rickandmortyapi.com/api/episode/50", "https://rickandmortyapi.com/api/episode/51"],
+      "gender" => "Male",
+      "id" => 5,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Jerry Smith",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/5"
+    },
+    %{
+      "created" => "2017-11-04T19:50:28.250Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/27"],
+      "gender" => "Female",
+      "id" => 6,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+      "location" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"},
+      "name" => "Abadango Cluster Princess",
+      "origin" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"},
+      "species" => "Alien",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/6"
+    },
+    %{
+      "created" => "2017-11-04T19:59:20.523Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11"],
+      "gender" => "Male",
+      "id" => 7,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+      "location" => %{
+        "name" => "Testicle Monster Dimension",
+        "url" => "https://rickandmortyapi.com/api/location/21"
+      },
+      "name" => "Abradolf Lincler",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "unknown",
+      "type" => "Genetic experiment",
+      "url" => "https://rickandmortyapi.com/api/character/7"
+    },
+    %{
+      "created" => "2017-11-04T20:03:34.737Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/28"],
+      "gender" => "Male",
+      "id" => 8,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Adjudicator Rick",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/8"
+    },
+    %{
+      "created" => "2017-11-04T20:06:54.976Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/24"],
+      "gender" => "Male",
+      "id" => 9,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Agency Director",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/9"
+    },
+    %{
+      "created" => "2017-11-04T20:19:09.017Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/25"],
+      "gender" => "Male",
+      "id" => 10,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+      "location" => %{
+        "name" => "Worldender's lair",
+        "url" => "https://rickandmortyapi.com/api/location/4"
+      },
+      "name" => "Alan Rails",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "Superhuman (Ghost trains summoner)",
+      "url" => "https://rickandmortyapi.com/api/character/10"
+    },
+    %{
+      "created" => "2017-11-04T20:20:20.965Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/12"],
+      "gender" => "Male",
+      "id" => 11,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Albert Einstein",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/11"
+    },
+    %{
+      "created" => "2017-11-04T20:32:33.144Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/3"],
+      "gender" => "Male",
+      "id" => 12,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
+      "location" => %{
+        "name" => "Anatomy Park",
+        "url" => "https://rickandmortyapi.com/api/location/5"
+      },
+      "name" => "Alexander",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/12"
+    },
+    %{
+      "created" => "2017-11-04T20:33:30.779Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/31"],
+      "gender" => "unknown",
+      "id" => 13,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Alien Googah",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "unknown",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/13"
+    },
+    %{
+      "created" => "2017-11-04T20:51:31.373Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+      "gender" => "Male",
+      "id" => 14,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Alien Morty",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "unknown",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/14"
+    },
+    %{
+      "created" => "2017-11-04T20:56:13.215Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+      "gender" => "Male",
+      "id" => 15,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Alien Rick",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "unknown",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/15"
+    },
+    %{
+      "created" => "2017-11-04T21:12:45.235Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/15"],
+      "gender" => "Male",
+      "id" => 16,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Amish Cyborg",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "Dead",
+      "type" => "Parasite",
+      "url" => "https://rickandmortyapi.com/api/character/16"
+    },
+    %{
+      "created" => "2017-11-04T22:21:24.481Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/3"],
+      "gender" => "Female",
+      "id" => 17,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+      "location" => %{
+        "name" => "Anatomy Park",
+        "url" => "https://rickandmortyapi.com/api/location/5"
+      },
+      "name" => "Annie",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/17"
+    },
+    %{
+      "created" => "2017-11-04T22:25:29.008Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/28"],
+      "gender" => "Male",
+      "id" => 18,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Antenna Morty",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "Human with antennae",
+      "url" => "https://rickandmortyapi.com/api/character/18"
+    },
+    %{
+      "created" => "2017-11-04T22:28:13.756Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+      "gender" => "Male",
+      "id" => 19,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
+      "location" => %{"name" => "unknown", "url" => ""},
+      "name" => "Antenna Rick",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "unknown",
+      "type" => "Human with antennae",
+      "url" => "https://rickandmortyapi.com/api/character/19"
+    },
+    %{
+      "created" => "2017-11-04T22:34:53.659Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/8"],
+      "gender" => "Male",
+      "id" => 20,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
+      "location" => %{
+        "name" => "Interdimensional Cable",
+        "url" => "https://rickandmortyapi.com/api/location/6"
+      },
+      "name" => "Ants in my Eyes Johnson",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "unknown",
+      "type" => "Human with ants in his eyes",
+      "url" => "https://rickandmortyapi.com/api/character/20"
+    }
+  ]
+}
+```
+
+Looking inside the `body`, we can see two keys, `info`, and `results`. Finally, this is an identical response to that we initially obtained using [`curl`](https://curl.se/) and [Postman](https://www.postman.com/) API querying tools. A quick inspection demonstrates that the back-end code forming our Elixir application retrieves the same results as those we obtain using these two dedicated and trusted tools.
+
+The [Rick and Morty API documentation](https://rickandmortyapi.com/documentation/#info-and-pagination) describes the structure of the first key, `info`, which clearly tells us that all results are paginated into batches of up to 20 documents per page, and that within that object, we will find the following fields:
+
+* `count`: the number of items—_characters_ in our case—that exist
+* `pages`: the number of pages (of 20 items per page), that encapsulate all the items
+* `next`: the URI to the _next page_ of results, if there is one
+* `prev`: the URI to the _previous page_ of results, if there is one
+
+To manage pagination, we will want the individual results returned in this object, providing a variable to store the returned value of each.
+
+Finally, the `results` key is an array (a list) of all the individual character objects returned, each containing all the fields in the _character_ schema. We only want to retrieve the _Avatar_ (field labeled `image`), _Name_, _Species_ and _Staus_ fields, so we will use _nested_ Elixr pattern matching to get them and save them to the relevant variables.
+
+```elixir
+%{
+  "info" => %{"count" => count, "next" => next, "pages" => pages, "prev" => prev},
+  "results" => results
+} = body
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  "info" => %{
+    "count" => 826,
+    "next" => "https://rickandmortyapi.com/api/character?page=2",
+    "pages" => 42,
+    "prev" => nil
+  },
+  "results" => [
+    %{
+      "created" => "2017-11-04T18:48:46.250Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/1",
+       "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3",
+       "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5",
+       "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7",
+       "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9",
+       "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11",
+       "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27",
+       "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29",
+       "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31",
+       "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33",
+       "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35",
+       "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       ...],
+      "gender" => "Male",
+      "id" => 1,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Rick Sanchez",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/1"
+    },
+    %{
+      "created" => "2017-11-04T18:50:21.651Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/1",
+       "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3",
+       "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5",
+       "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7",
+       "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9",
+       "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11",
+       "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27",
+       "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29",
+       "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31",
+       "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33",
+       "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35",
+       "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", ...],
+      "gender" => "Male",
+      "id" => 2,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Morty Smith",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/2"
+    },
+    %{
+      "created" => "2017-11-04T19:09:56.428Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/6",
+       "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+       "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27",
+       "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30",
+       "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32",
+       "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34",
+       "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47",
+       "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49",
+       "https://rickandmortyapi.com/api/episode/51"],
+      "gender" => "Female",
+      "id" => 3,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Summer Smith",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/3"
+    },
+    %{
+      "created" => "2017-11-04T19:22:43.665Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/6",
+       "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+       "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12",
+       "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15",
+       "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/18",
+       "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20",
+       "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22",
+       "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24",
+       "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26",
+       "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/28",
+       "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30",
+       "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32",
+       "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34",
+       "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47",
+       "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49",
+       "https://rickandmortyapi.com/api/episode/51"],
+      "gender" => "Female",
+      "id" => 4,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Beth Smith",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/4"
+    },
+    %{
+      "created" => "2017-11-04T19:26:56.301Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/6",
+       "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8",
+       "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12",
+       "https://rickandmortyapi.com/api/episode/13", "https://rickandmortyapi.com/api/episode/14",
+       "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16",
+       "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19",
+       "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21",
+       "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23",
+       "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/29",
+       "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31",
+       "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33",
+       "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36",
+       "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39",
+       "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41",
+       "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43",
+       "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45",
+       "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47",
+       "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49",
+       "https://rickandmortyapi.com/api/episode/50", "https://rickandmortyapi.com/api/episode/51"],
+      "gender" => "Male",
+      "id" => 5,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Jerry Smith",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/5"
+    },
+    %{
+      "created" => "2017-11-04T19:50:28.250Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/27"],
+      "gender" => "Female",
+      "id" => 6,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+      "location" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"},
+      "name" => "Abadango Cluster Princess",
+      "origin" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"},
+      "species" => "Alien",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/6"
+    },
+    %{
+      "created" => "2017-11-04T19:59:20.523Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/11"],
+      "gender" => "Male",
+      "id" => 7,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+      "location" => %{
+        "name" => "Testicle Monster Dimension",
+        "url" => "https://rickandmortyapi.com/api/location/21"
+      },
+      "name" => "Abradolf Lincler",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "unknown",
+      "type" => "Genetic experiment",
+      "url" => "https://rickandmortyapi.com/api/character/7"
+    },
+    %{
+      "created" => "2017-11-04T20:03:34.737Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/28"],
+      "gender" => "Male",
+      "id" => 8,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Adjudicator Rick",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/8"
+    },
+    %{
+      "created" => "2017-11-04T20:06:54.976Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/24"],
+      "gender" => "Male",
+      "id" => 9,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Agency Director",
+      "origin" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/9"
+    },
+    %{
+      "created" => "2017-11-04T20:19:09.017Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/25"],
+      "gender" => "Male",
+      "id" => 10,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+      "location" => %{
+        "name" => "Worldender's lair",
+        "url" => "https://rickandmortyapi.com/api/location/4"
+      },
+      "name" => "Alan Rails",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "Superhuman (Ghost trains summoner)",
+      "url" => "https://rickandmortyapi.com/api/character/10"
+    },
+    %{
+      "created" => "2017-11-04T20:20:20.965Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/12"],
+      "gender" => "Male",
+      "id" => 11,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Albert Einstein",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/11"
+    },
+    %{
+      "created" => "2017-11-04T20:32:33.144Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/3"],
+      "gender" => "Male",
+      "id" => 12,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
+      "location" => %{
+        "name" => "Anatomy Park",
+        "url" => "https://rickandmortyapi.com/api/location/5"
+      },
+      "name" => "Alexander",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Dead",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/12"
+    },
+    %{
+      "created" => "2017-11-04T20:33:30.779Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/31"],
+      "gender" => "unknown",
+      "id" => 13,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Alien Googah",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "unknown",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/13"
+    },
+    %{
+      "created" => "2017-11-04T20:51:31.373Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+      "gender" => "Male",
+      "id" => 14,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Alien Morty",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "unknown",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/14"
+    },
+    %{
+      "created" => "2017-11-04T20:56:13.215Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+      "gender" => "Male",
+      "id" => 15,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Alien Rick",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "unknown",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/15"
+    },
+    %{
+      "created" => "2017-11-04T21:12:45.235Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/15"],
+      "gender" => "Male",
+      "id" => 16,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
+      "location" => %{
+        "name" => "Earth (Replacement Dimension)",
+        "url" => "https://rickandmortyapi.com/api/location/20"
+      },
+      "name" => "Amish Cyborg",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Alien",
+      "status" => "Dead",
+      "type" => "Parasite",
+      "url" => "https://rickandmortyapi.com/api/character/16"
+    },
+    %{
+      "created" => "2017-11-04T22:21:24.481Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/3"],
+      "gender" => "Female",
+      "id" => 17,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+      "location" => %{
+        "name" => "Anatomy Park",
+        "url" => "https://rickandmortyapi.com/api/location/5"
+      },
+      "name" => "Annie",
+      "origin" => %{
+        "name" => "Earth (C-137)",
+        "url" => "https://rickandmortyapi.com/api/location/1"
+      },
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "",
+      "url" => "https://rickandmortyapi.com/api/character/17"
+    },
+    %{
+      "created" => "2017-11-04T22:25:29.008Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10",
+       "https://rickandmortyapi.com/api/episode/28"],
+      "gender" => "Male",
+      "id" => 18,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
+      "location" => %{
+        "name" => "Citadel of Ricks",
+        "url" => "https://rickandmortyapi.com/api/location/3"
+      },
+      "name" => "Antenna Morty",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "Alive",
+      "type" => "Human with antennae",
+      "url" => "https://rickandmortyapi.com/api/character/18"
+    },
+    %{
+      "created" => "2017-11-04T22:28:13.756Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/10"],
+      "gender" => "Male",
+      "id" => 19,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
+      "location" => %{"name" => "unknown", "url" => ""},
+      "name" => "Antenna Rick",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "unknown",
+      "type" => "Human with antennae",
+      "url" => "https://rickandmortyapi.com/api/character/19"
+    },
+    %{
+      "created" => "2017-11-04T22:34:53.659Z",
+      "episode" => ["https://rickandmortyapi.com/api/episode/8"],
+      "gender" => "Male",
+      "id" => 20,
+      "image" => "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
+      "location" => %{
+        "name" => "Interdimensional Cable",
+        "url" => "https://rickandmortyapi.com/api/location/6"
+      },
+      "name" => "Ants in my Eyes Johnson",
+      "origin" => %{"name" => "unknown", "url" => ""},
+      "species" => "Human",
+      "status" => "unknown",
+      "type" => "Human with ants in his eyes",
+      "url" => "https://rickandmortyapi.com/api/character/20"
+    }
+  ]
+}
+```
+
+## Reshaping the data
+
+We now need to reshape, or manipulate the data in our `results` variable, to contain only the four fields we need to use.
+
+<!-- livebook:{"break_markdown":true} -->
+
+Having fetched the data, `Req.get/1` has already converted the response data into Elixir data structures. Can we find out what kind of data structure our `results` variable contains? Yes, using th `i/1` function, defined in the `IEx.Helpers` namespace.
+
+We can see that what was a JSON `array` has now been converted to an Elixir list object.
+
+```elixir
+IEx.Helpers.i(results)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Term
+  [%{"created" => "2017-11-04T18:48:46.250Z", "episode" => ["https://rickandmortyapi.com/api/episode/1", "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3", "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5", "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13", "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17", "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37", "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39", "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41", "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43", "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45", "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47", ...], "gender" => "Male", "id" => 1, "image" => "https://rickandmortyapi.com/api/character/avatar/1.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Rick Sanchez", "origin" => %{"name" => "Earth (C-137)", "url" => "https://rickandmortyapi.com/api/location/1"}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/1"}, %{"created" => "2017-11-04T18:50:21.651Z", "episode" => ["https://rickandmortyapi.com/api/episode/1", "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3", "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5", "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13", "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17", "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37", "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39", "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41", "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43", "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45", "https://rickandmortyapi.com/api/episode/46", ...], "gender" => "Male", "id" => 2, "image" => "https://rickandmortyapi.com/api/character/avatar/2.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Morty Smith", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/2"}, %{"created" => "2017-11-04T19:09:56.428Z", "episode" => ["https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17", "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39", "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41", "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43", "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45", "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47", "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49", "https://rickandmortyapi.com/api/episode/51"], "gender" => "Female", "id" => 3, "image" => "https://rickandmortyapi.com/api/character/avatar/3.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Summer Smith", "origin" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/3"}, %{"created" => "2017-11-04T19:22:43.665Z", "episode" => ["https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39", "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41", "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43", "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45", "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47", "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49", "https://rickandmortyapi.com/api/episode/51"], "gender" => "Female", "id" => 4, "image" => "https://rickandmortyapi.com/api/character/avatar/4.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Beth Smith", "origin" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/4"}, %{"created" => "2017-11-04T19:26:56.301Z", "episode" => ["https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13", "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39", "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41", "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43", "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45", "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47", "https://rickandmortyapi.com/api/episode/48", "https://rickandmortyapi.com/api/episode/49", "https://rickandmortyapi.com/api/episode/50", "https://rickandmortyapi.com/api/episode/51"], "gender" => "Male", "id" => 5, "image" => "https://rickandmortyapi.com/api/character/avatar/5.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Jerry Smith", "origin" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/5"}, %{"created" => "2017-11-04T19:50:28.250Z", "episode" => ["https://rickandmortyapi.com/api/episode/27"], "gender" => "Female", "id" => 6, "image" => "https://rickandmortyapi.com/api/character/avatar/6.jpeg", "location" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"}, "name" => "Abadango Cluster Princess", "origin" => %{"name" => "Abadango", "url" => "https://rickandmortyapi.com/api/location/2"}, "species" => "Alien", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/6"}, %{"created" => "2017-11-04T19:59:20.523Z", "episode" => ["https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11"], "gender" => "Male", "id" => 7, "image" => "https://rickandmortyapi.com/api/character/avatar/7.jpeg", "location" => %{"name" => "Testicle Monster Dimension", "url" => "https://rickandmortyapi.com/api/location/21"}, "name" => "Abradolf Lincler", "origin" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "species" => "Human", "status" => "unknown", "type" => "Genetic experiment", "url" => "https://rickandmortyapi.com/api/character/7"}, %{"created" => "2017-11-04T20:03:34.737Z", "episode" => ["https://rickandmortyapi.com/api/episode/28"], "gender" => "Male", "id" => 8, "image" => "https://rickandmortyapi.com/api/character/avatar/8.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Adjudicator Rick", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Human", "status" => "Dead", "type" => "", "url" => "https://rickandmortyapi.com/api/character/8"}, %{"created" => "2017-11-04T20:06:54.976Z", "episode" => ["https://rickandmortyapi.com/api/episode/24"], "gender" => "Male", "id" => 9, "image" => "https://rickandmortyapi.com/api/character/avatar/9.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Agency Director", "origin" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "species" => "Human", "status" => "Dead", "type" => "", "url" => "https://rickandmortyapi.com/api/character/9"}, %{"created" => "2017-11-04T20:19:09.017Z", "episode" => ["https://rickandmortyapi.com/api/episode/25"], "gender" => "Male", "id" => 10, "image" => "https://rickandmortyapi.com/api/character/avatar/10.jpeg", "location" => %{"name" => "Worldender's lair", "url" => "https://rickandmortyapi.com/api/location/4"}, "name" => "Alan Rails", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Human", "status" => "Dead", "type" => "Superhuman (Ghost trains summoner)", "url" => "https://rickandmortyapi.com/api/character/10"}, %{"created" => "2017-11-04T20:20:20.965Z", "episode" => ["https://rickandmortyapi.com/api/episode/12"], "gender" => "Male", "id" => 11, "image" => "https://rickandmortyapi.com/api/character/avatar/11.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Albert Einstein", "origin" => %{"name" => "Earth (C-137)", "url" => "https://rickandmortyapi.com/api/location/1"}, "species" => "Human", "status" => "Dead", "type" => "", "url" => "https://rickandmortyapi.com/api/character/11"}, %{"created" => "2017-11-04T20:32:33.144Z", "episode" => ["https://rickandmortyapi.com/api/episode/3"], "gender" => "Male", "id" => 12, "image" => "https://rickandmortyapi.com/api/character/avatar/12.jpeg", "location" => %{"name" => "Anatomy Park", "url" => "https://rickandmortyapi.com/api/location/5"}, "name" => "Alexander", "origin" => %{"name" => "Earth (C-137)", "url" => "https://rickandmortyapi.com/api/location/1"}, "species" => "Human", "status" => "Dead", "type" => "", "url" => "https://rickandmortyapi.com/api/character/12"}, %{"created" => "2017-11-04T20:33:30.779Z", "episode" => ["https://rickandmortyapi.com/api/episode/31"], "gender" => "unknown", "id" => 13, "image" => "https://rickandmortyapi.com/api/character/avatar/13.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Alien Googah", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Alien", "status" => "unknown", "type" => "", "url" => "https://rickandmortyapi.com/api/character/13"}, %{"created" => "2017-11-04T20:51:31.373Z", "episode" => ["https://rickandmortyapi.com/api/episode/10"], "gender" => "Male", "id" => 14, "image" => "https://rickandmortyapi.com/api/character/avatar/14.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Alien Morty", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Alien", "status" => "unknown", "type" => "", "url" => "https://rickandmortyapi.com/api/character/14"}, %{"created" => "2017-11-04T20:56:13.215Z", "episode" => ["https://rickandmortyapi.com/api/episode/10"], "gender" => "Male", "id" => 15, "image" => "https://rickandmortyapi.com/api/character/avatar/15.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Alien Rick", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Alien", "status" => "unknown", "type" => "", "url" => "https://rickandmortyapi.com/api/character/15"}, %{"created" => "2017-11-04T21:12:45.235Z", "episode" => ["https://rickandmortyapi.com/api/episode/15"], "gender" => "Male", "id" => 16, "image" => "https://rickandmortyapi.com/api/character/avatar/16.jpeg", "location" => %{"name" => "Earth (Replacement Dimension)", "url" => "https://rickandmortyapi.com/api/location/20"}, "name" => "Amish Cyborg", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Alien", "status" => "Dead", "type" => "Parasite", "url" => "https://rickandmortyapi.com/api/character/16"}, %{"created" => "2017-11-04T22:21:24.481Z", "episode" => ["https://rickandmortyapi.com/api/episode/3"], "gender" => "Female", "id" => 17, "image" => "https://rickandmortyapi.com/api/character/avatar/17.jpeg", "location" => %{"name" => "Anatomy Park", "url" => "https://rickandmortyapi.com/api/location/5"}, "name" => "Annie", "origin" => %{"name" => "Earth (C-137)", "url" => "https://rickandmortyapi.com/api/location/1"}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/17"}, %{"created" => "2017-11-04T22:25:29.008Z", "episode" => ["https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/28"], "gender" => "Male", "id" => 18, "image" => "https://rickandmortyapi.com/api/character/avatar/18.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Antenna Morty", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Human", "status" => "Alive", "type" => "Human with antennae", "url" => "https://rickandmortyapi.com/api/character/18"}, %{"created" => "2017-11-04T22:28:13.756Z", "episode" => ["https://rickandmortyapi.com/api/episode/10"], "gender" => "Male", "id" => 19, "image" => "https://rickandmortyapi.com/api/character/avatar/19.jpeg", "location" => %{"name" => "unknown", "url" => ""}, "name" => "Antenna Rick", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Human", "status" => "unknown", "type" => "Human with antennae", "url" => "https://rickandmortyapi.com/api/character/19"}, %{"created" => "2017-11-04T22:34:53.659Z", "episode" => ["https://rickandmortyapi.com/api/episode/8"], "gender" => "Male", "id" => 20, "image" => "https://rickandmortyapi.com/api/character/avatar/20.jpeg", "location" => %{"name" => "Interdimensional Cable", "url" => "https://rickandmortyapi.com/api/location/6"}, "name" => "Ants in my Eyes Johnson", "origin" => %{"name" => "unknown", "url" => ""}, "species" => "Human", "status" => "unknown", "type" => "Human with ants in his eyes", "url" => "https://rickandmortyapi.com/api/character/20"}]
+Data type
+  List
+Reference modules
+  List
+Implemented protocols
+  Collectable, Enumerable, IEx.Info, Inspect, Jason.Encoder, Kino.Render, List.Chars, String.Chars, Table.Reader
+```
+
+We can ask for the same introspection on the items in the list. Here, we deconstruct the list into a _head_ (first item) and _tail_ (rest of list), to inspect the type of items we have in the list, and we see that each item is a map.
+
+```elixir
+[head | tail] = results
+IEx.Helpers.i(head)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Term
+  %{"created" => "2017-11-04T18:48:46.250Z", "episode" => ["https://rickandmortyapi.com/api/episode/1", "https://rickandmortyapi.com/api/episode/2", "https://rickandmortyapi.com/api/episode/3", "https://rickandmortyapi.com/api/episode/4", "https://rickandmortyapi.com/api/episode/5", "https://rickandmortyapi.com/api/episode/6", "https://rickandmortyapi.com/api/episode/7", "https://rickandmortyapi.com/api/episode/8", "https://rickandmortyapi.com/api/episode/9", "https://rickandmortyapi.com/api/episode/10", "https://rickandmortyapi.com/api/episode/11", "https://rickandmortyapi.com/api/episode/12", "https://rickandmortyapi.com/api/episode/13", "https://rickandmortyapi.com/api/episode/14", "https://rickandmortyapi.com/api/episode/15", "https://rickandmortyapi.com/api/episode/16", "https://rickandmortyapi.com/api/episode/17", "https://rickandmortyapi.com/api/episode/18", "https://rickandmortyapi.com/api/episode/19", "https://rickandmortyapi.com/api/episode/20", "https://rickandmortyapi.com/api/episode/21", "https://rickandmortyapi.com/api/episode/22", "https://rickandmortyapi.com/api/episode/23", "https://rickandmortyapi.com/api/episode/24", "https://rickandmortyapi.com/api/episode/25", "https://rickandmortyapi.com/api/episode/26", "https://rickandmortyapi.com/api/episode/27", "https://rickandmortyapi.com/api/episode/28", "https://rickandmortyapi.com/api/episode/29", "https://rickandmortyapi.com/api/episode/30", "https://rickandmortyapi.com/api/episode/31", "https://rickandmortyapi.com/api/episode/32", "https://rickandmortyapi.com/api/episode/33", "https://rickandmortyapi.com/api/episode/34", "https://rickandmortyapi.com/api/episode/35", "https://rickandmortyapi.com/api/episode/36", "https://rickandmortyapi.com/api/episode/37", "https://rickandmortyapi.com/api/episode/38", "https://rickandmortyapi.com/api/episode/39", "https://rickandmortyapi.com/api/episode/40", "https://rickandmortyapi.com/api/episode/41", "https://rickandmortyapi.com/api/episode/42", "https://rickandmortyapi.com/api/episode/43", "https://rickandmortyapi.com/api/episode/44", "https://rickandmortyapi.com/api/episode/45", "https://rickandmortyapi.com/api/episode/46", "https://rickandmortyapi.com/api/episode/47", "https://rickandmortyapi.com/api/episode/48", ...], "gender" => "Male", "id" => 1, "image" => "https://rickandmortyapi.com/api/character/avatar/1.jpeg", "location" => %{"name" => "Citadel of Ricks", "url" => "https://rickandmortyapi.com/api/location/3"}, "name" => "Rick Sanchez", "origin" => %{"name" => "Earth (C-137)", "url" => "https://rickandmortyapi.com/api/location/1"}, "species" => "Human", "status" => "Alive", "type" => "", "url" => "https://rickandmortyapi.com/api/character/1"}
+Data type
+  Map
+Reference modules
+  Map
+Implemented protocols
+  Collectable, Enumerable, IEx.Info, Inspect, Jason.Encoder, Kino.Render, Table.Reader
+```
+
+Now, we use the `Enum` module to help us enumerate, or _map_ over our resulting tree. This will take the results list, enumerate each item (map) in the list, in order to extract only the four fields that we want, renaming `image` to `avatar` in the process.
+
+A list of maps containing only the four desired fields is returned, ready for later use in building a table listing all characters from the Rick and Morty show.
+
+```elixir
+character_list =
+  results
+  |> Enum.map(fn %{
+                   "id" => id,
+                   "name" => name,
+                   "species" => species,
+                   "status" => status,
+                   "image" => image
+                 } ->
+    %{id: id, name: name, species: species, status: status, avatar: image}
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[
+  %{
+    id: 1,
+    name: "Rick Sanchez",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
+  },
+  %{
+    id: 2,
+    name: "Morty Smith",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/2.jpeg"
+  },
+  %{
+    id: 3,
+    name: "Summer Smith",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/3.jpeg"
+  },
+  %{
+    id: 4,
+    name: "Beth Smith",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/4.jpeg"
+  },
+  %{
+    id: 5,
+    name: "Jerry Smith",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/5.jpeg"
+  },
+  %{
+    id: 6,
+    name: "Abadango Cluster Princess",
+    status: "Alive",
+    species: "Alien",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/6.jpeg"
+  },
+  %{
+    id: 7,
+    name: "Abradolf Lincler",
+    status: "unknown",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/7.jpeg"
+  },
+  %{
+    id: 8,
+    name: "Adjudicator Rick",
+    status: "Dead",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/8.jpeg"
+  },
+  %{
+    id: 9,
+    name: "Agency Director",
+    status: "Dead",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/9.jpeg"
+  },
+  %{
+    id: 10,
+    name: "Alan Rails",
+    status: "Dead",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/10.jpeg"
+  },
+  %{
+    id: 11,
+    name: "Albert Einstein",
+    status: "Dead",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/11.jpeg"
+  },
+  %{
+    id: 12,
+    name: "Alexander",
+    status: "Dead",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/12.jpeg"
+  },
+  %{
+    id: 13,
+    name: "Alien Googah",
+    status: "unknown",
+    species: "Alien",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/13.jpeg"
+  },
+  %{
+    id: 14,
+    name: "Alien Morty",
+    status: "unknown",
+    species: "Alien",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/14.jpeg"
+  },
+  %{
+    id: 15,
+    name: "Alien Rick",
+    status: "unknown",
+    species: "Alien",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/15.jpeg"
+  },
+  %{
+    id: 16,
+    name: "Amish Cyborg",
+    status: "Dead",
+    species: "Alien",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/16.jpeg"
+  },
+  %{
+    id: 17,
+    name: "Annie",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/17.jpeg"
+  },
+  %{
+    id: 18,
+    name: "Antenna Morty",
+    status: "Alive",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/18.jpeg"
+  },
+  %{
+    id: 19,
+    name: "Antenna Rick",
+    status: "unknown",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/19.jpeg"
+  },
+  %{
+    id: 20,
+    name: "Ants in my Eyes Johnson",
+    status: "unknown",
+    species: "Human",
+    avatar: "https://rickandmortyapi.com/api/character/avatar/20.jpeg"
+  }
+]
+```
+
+## Visualising the completed character list
+
+Now, we can use the `kino_explorer` library to visualise a table of our characters.
+
+<!-- livebook:{"attrs":{"assign_to":"character_data","collect":true,"data_frame":"character_list","data_frame_alias":"Elixir.Explorer.DataFrame","is_data_frame":false,"lazy":true,"missing_require":"Elixir.Explorer.DataFrame","operations":[]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
+
+```elixir
+require Explorer.DataFrame
+character_data = character_list |> Explorer.DataFrame.new()
+```
+
+We don't like the column order, preferring to have the `avatar` column last, so we reorder the columns. Next, instead of lowercase key names, we rename them all to a nicer, cpaitalised, human representation using `Explorer` functions.
+
+```elixir
+character_data
+|> Explorer.DataFrame.relocate([:id, :name, :species, :status], before: :avatar)
+|> Explorer.DataFrame.rename(avatar: "Avatar")
+|> Explorer.DataFrame.rename(name: "Name")
+|> Explorer.DataFrame.rename(species: "Species")
+|> Explorer.DataFrame.rename(status: "Status")
+|> Explorer.DataFrame.rename(id: "ID")
+```
