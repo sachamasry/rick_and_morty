@@ -1,5 +1,11 @@
 # RickAndMorty
 
+## Introduction
+
+An exercise in consuming the Rick and Morty API, and presenting it in the form of a single page application (SPA), using Elixir LiveView.
+
+## Installation and setup
+
 To start your Phoenix server:
 
   * Run `mix setup` to install and setup dependencies
