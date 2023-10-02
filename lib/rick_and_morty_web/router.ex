@@ -18,6 +18,8 @@ defmodule RickAndMortyWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/characters", CharacterLive.Index, :index
+    live "/character/:id", CharacterLive.Show, :show
   end
 
   # Other scopes may use custom stacks.

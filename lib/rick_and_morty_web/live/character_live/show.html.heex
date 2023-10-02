@@ -1,0 +1,12 @@
+<.header>
+  Character <%= @character.id %>
+  <:subtitle>This is a character record.</:subtitle>
+</.header>
+
+<.list>
+  <:item title="Name"><%= @character.name %></:item>
+  <:item title="Species"><%= @character.species %></:item>
+  <:item title="Status"><%= @character.status %></:item>
+</.list>
+
+<.back navigate={~p"/characters"}>Back to character list</.back>
