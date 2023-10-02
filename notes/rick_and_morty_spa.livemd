@@ -1939,12 +1939,47 @@ character_list =
 ]
 ```
 
+## Visualising the completed character list
+
+Now, we can use the `kino_explorer` library to visualise a table of our characters.
+
+This is a little detour from the building of our application, but it's useful for us to visualise this information in a tabular view, to ensure that our two-dimensional structure (above), holds the information we actually want to see.
+
+<!-- livebook:{"attrs":{"assign_to":"character_data","collect":true,"data_frame":"character_list","data_frame_alias":"Elixir.Explorer.DataFrame","is_data_frame":false,"lazy":true,"missing_require":"Elixir.Explorer.DataFrame","operations":[]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
+
+```elixir
+require Explorer.DataFrame
+character_data = character_list |> Explorer.DataFrame.new()
+```
+
+We don't like the column order, preferring to have the `avatar` column last, so we reorder the columns. Next, instead of lowercase key names, we rename them all to a nicer, capitalised, human representation using `Explorer` functions.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+character_data
+|> Explorer.DataFrame.relocate([:id, :name, :species, :status], before: :avatar)
+|> Explorer.DataFrame.rename(avatar: "Avatar")
+|> Explorer.DataFrame.rename(name: "Name")
+|> Explorer.DataFrame.rename(species: "Species")
+|> Explorer.DataFrame.rename(status: "Status")
+|> Explorer.DataFrame.rename(id: "ID")
+```
+
 ## Reshaping the data into Elixir `structs`
 
-First, we need to define a structure—in its own module—for the character listing fields.
+Phoenix LiveView, our web application framework, doesn't want the data in the form of a list of maps, as maps are too unstructured and _ad hoc_; they could contain fewer or more fields than are expected, for any given row. Instead, it expects the rows to be defined within an Elixir [`struct`](https://elixir-lang.org/getting-started/structs.html) data structure, one build on top of maps, with the difference that fields must be named and defined, and they will be enforced. This way, LiveView knows for certain—as structs are enforced by compile-time checks—that all the fields must be defined for each row of our character list.
+
+Let's define a structure—in its own module—for the character listing fields.
 
 ```elixir
 defmodule RickAndMorty.CharacterList do
+  @moduledoc """
+  Creates a structure holding five fields of information on
+  Rick and Morty characters: `id`, `avatar` (image), `name` and 
+  `status`.
+  """
+
   defstruct [
     :id,
     :avatar,
@@ -1961,6 +1996,8 @@ end
 {:module, RickAndMorty.CharacterList, <<70, 79, 82, 49, 0, 0, 9, ...>>,
  %RickAndMorty.CharacterList{id: nil, avatar: nil, name: nil, species: nil, status: nil}}
 ```
+
+Now, we will simply duplicate the data reshaping function we used previously, replacing only the building of the maps representing rows, using the Rick and Morty character list `struct`.
 
 ```elixir
 character_list_struct =
@@ -2129,29 +2166,6 @@ character_list_struct =
 ]
 ```
 
-## Visualising the completed character list
-
-Now, we can use the `kino_explorer` library to visualise a table of our characters.
-
-<!-- livebook:{"attrs":{"assign_to":"character_data","collect":true,"data_frame":"character_list","data_frame_alias":"Elixir.Explorer.DataFrame","is_data_frame":false,"lazy":true,"missing_require":"Elixir.Explorer.DataFrame","operations":[]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
-
-```elixir
-require Explorer.DataFrame
-character_data = character_list |> Explorer.DataFrame.new()
-```
-
-We don't like the column order, preferring to have the `avatar` column last, so we reorder the columns. Next, instead of lowercase key names, we rename them all to a nicer, cpaitalised, human representation using `Explorer` functions.
-
-```elixir
-character_data
-|> Explorer.DataFrame.relocate([:id, :name, :species, :status], before: :avatar)
-|> Explorer.DataFrame.rename(avatar: "Avatar")
-|> Explorer.DataFrame.rename(name: "Name")
-|> Explorer.DataFrame.rename(species: "Species")
-|> Explorer.DataFrame.rename(status: "Status")
-|> Explorer.DataFrame.rename(id: "ID")
-```
-
 ## Getting a single character profile from the API
 
 With the character list built, we have exactly what we want to present a list of characters. As a user interacts with that list, they will want to see a single character's full profile, which is why we need to query the API to get that information.
@@ -2159,14 +2173,14 @@ With the character list built, we have exactly what we want to present a list of
 As before, we build the API query endpoint by concatenating the generic part of the endpoint "character", followed by the ID of the desired character.
 
 ```elixir
-id = 13
+id = 17
 single_character_endpoint = rick_and_morty_api_base_url <> "character" <> "/" <> to_string(id)
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-"https://rickandmortyapi.com/api/character/13"
+"https://rickandmortyapi.com/api/character/17"
 ```
 
 As before, we query the API, just this time we will not slowly destructure the results for our needs, but will rather use _deep pattern-matching_ to assign the information we want to variables, succinctly. In this data reshaping action, we are getting all the information specified and provided by the API, creating a `map` object with the results, for consumption in our LiveView application.
@@ -2211,20 +2225,20 @@ As before, we query the API, just this time we will not slowly destructure the r
 
 ```
 %{
-  id: 13,
-  name: "Alien Googah",
-  status: "unknown",
+  id: 17,
+  name: "Annie",
+  status: "Alive",
   type: "",
-  origin: %{origin_name: "unknown", origin_url: ""},
+  origin: %{origin_name: "Earth (C-137)", origin_url: "https://rickandmortyapi.com/api/location/1"},
   location: %{
-    location_url: "https://rickandmortyapi.com/api/location/20",
-    location_name: "Earth (Replacement Dimension)"
+    location_url: "https://rickandmortyapi.com/api/location/5",
+    location_name: "Anatomy Park"
   },
-  url: "https://rickandmortyapi.com/api/character/13",
-  species: "Alien",
-  avatar: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
-  gender: "unknown",
-  created: "2017-11-04T20:33:30.779Z",
-  episode: ["https://rickandmortyapi.com/api/episode/31"]
+  url: "https://rickandmortyapi.com/api/character/17",
+  species: "Human",
+  avatar: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+  gender: "Female",
+  created: "2017-11-04T22:21:24.481Z",
+  episode: ["https://rickandmortyapi.com/api/episode/3"]
 }
 ```
