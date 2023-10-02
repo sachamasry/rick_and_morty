@@ -1398,6 +1398,10 @@ select {
   font-weight: 600;
 }
 
+.capitalize {
+  text-transform: capitalize;
+}
+
 .leading-10 {
   line-height: 2.5rem;
 }

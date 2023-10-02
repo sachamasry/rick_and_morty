@@ -2,8 +2,20 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
   use RickAndMortyWeb, :live_view
 
   @character_list [
-    %RickAndMorty.Character{id: 13, avatar: "https://rickandmortyapi.com/api/character/avatar/1.jpeg", name: "Bob", species: "Squirrel", status: "Live"},
-    %RickAndMorty.Character{id: 69, avatar: "https://rickandmortyapi.com/api/character/avatar/2.jpeg", name: "Nicola", species: "Chipmunk", status: "Live"}
+    %RickAndMorty.CharacterList{
+      id: 1,
+      avatar: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+      name: "Rick Sanchez",
+      species: "Human",
+      status: "Alive"
+},
+    %RickAndMorty.CharacterList{
+      id: 2,
+      avatar: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+      name: "Morty Smith",
+      species: "Human",
+      status: "Alive"
+    }
   ]
 
   @impl true

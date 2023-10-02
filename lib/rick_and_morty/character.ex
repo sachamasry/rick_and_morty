@@ -1,4 +1,4 @@
-defmodule RickAndMorty.Character do
+defmodule RickAndMorty.CharacterList do
 
   defstruct [
     :id,

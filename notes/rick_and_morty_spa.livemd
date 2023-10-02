@@ -136,7 +136,7 @@ To make this resource reusable, we save the endpoint URI string to the `characte
 
 ```elixir
 rick_and_morty_api_base_url = "https://rickandmortyapi.com/api/"
-characters_endpoint = rick_and_morty_api_base_url <> "character"
+character_list_endpoint = rick_and_morty_api_base_url <> "character"
 ```
 
 <!-- livebook:{"output":true} -->
@@ -152,7 +152,7 @@ With the endpoint URI defined, we can now query the API for a list of all charac
 We are storing the result of the endpoint query to the `character_response` variable for later use.
 
 ```elixir
-characters_response = Req.get(characters_endpoint)
+character_list_response = Req.get(character_list_endpoint)
 ```
 
 <!-- livebook:{"output":true} -->
@@ -163,17 +163,17 @@ characters_response = Req.get(characters_endpoint)
    status: 200,
    headers: %{
      "access-control-allow-origin" => ["*"],
-     "age" => ["5821"],
+     "age" => ["1468"],
      "cache-control" => ["max-age=259200"],
      "content-length" => ["19496"],
      "content-type" => ["application/json; charset=utf-8"],
-     "date" => ["Sun, 01 Oct 2023 18:01:23 GMT"],
+     "date" => ["Mon, 02 Oct 2023 17:21:44 GMT"],
      "etag" => ["W/\"4c28-8Xn6OSgPYZqE/r+q8L2TTeK0Efo\""],
-     "expires" => ["Wed, 04 Oct 2023 16:24:22 GMT"],
+     "expires" => ["Thu, 05 Oct 2023 16:57:16 GMT"],
      "server" => ["Netlify"],
      "strict-transport-security" => ["max-age=31536000"],
      "vary" => ["Accept-Encoding"],
-     "x-nf-request-id" => ["01HBP6DW8DYE714RZ08FXD8VNP"],
+     "x-nf-request-id" => ["01HBRPHZB6A2A35EHXVMQPZAQB"],
      "x-powered-by" => ["Express"]
    },
    body: %{
@@ -735,7 +735,7 @@ We do want the `body`, so we will pattern-match the `body` key inside the `%Req.
 ## Getting a list of all Rick and Morty characters from the API
 
 ```elixir
-{:ok, %{body: body}} = characters_response
+{:ok, %{body: body}} = character_list_response
 body
 ```
 
@@ -1939,6 +1939,196 @@ character_list =
 ]
 ```
 
+## Reshaping the data into Elixir `structs`
+
+First, we need to define a structure—in its own module—for the character listing fields.
+
+```elixir
+defmodule RickAndMorty.CharacterList do
+  defstruct [
+    :id,
+    :avatar,
+    :name,
+    :species,
+    :status
+  ]
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, RickAndMorty.CharacterList, <<70, 79, 82, 49, 0, 0, 9, ...>>,
+ %RickAndMorty.CharacterList{id: nil, avatar: nil, name: nil, species: nil, status: nil}}
+```
+
+```elixir
+character_list_struct =
+  results
+  |> Enum.map(fn %{
+                   "id" => id,
+                   "name" => name,
+                   "species" => species,
+                   "status" => status,
+                   "image" => image
+                 } ->
+    %RickAndMorty.CharacterList{
+      id: id,
+      name: name,
+      species: species,
+      status: status,
+      avatar: image
+    }
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[
+  %RickAndMorty.CharacterList{
+    id: 1,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+    name: "Rick Sanchez",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 2,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+    name: "Morty Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 3,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+    name: "Summer Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 4,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+    name: "Beth Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 5,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+    name: "Jerry Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 6,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+    name: "Abadango Cluster Princess",
+    species: "Alien",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 7,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+    name: "Abradolf Lincler",
+    species: "Human",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 8,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+    name: "Adjudicator Rick",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 9,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+    name: "Agency Director",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 10,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+    name: "Alan Rails",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 11,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
+    name: "Albert Einstein",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 12,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
+    name: "Alexander",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 13,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+    name: "Alien Googah",
+    species: "Alien",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 14,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
+    name: "Alien Morty",
+    species: "Alien",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 15,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
+    name: "Alien Rick",
+    species: "Alien",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 16,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
+    name: "Amish Cyborg",
+    species: "Alien",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 17,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+    name: "Annie",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 18,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
+    name: "Antenna Morty",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 19,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
+    name: "Antenna Rick",
+    species: "Human",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 20,
+    avatar: "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
+    name: "Ants in my Eyes Johnson",
+    species: "Human",
+    status: "unknown"
+  }
+]
+```
+
 ## Visualising the completed character list
 
 Now, we can use the `kino_explorer` library to visualise a table of our characters.
@@ -1960,4 +2150,81 @@ character_data
 |> Explorer.DataFrame.rename(species: "Species")
 |> Explorer.DataFrame.rename(status: "Status")
 |> Explorer.DataFrame.rename(id: "ID")
+```
+
+## Getting a single character profile from the API
+
+With the character list built, we have exactly what we want to present a list of characters. As a user interacts with that list, they will want to see a single character's full profile, which is why we need to query the API to get that information.
+
+As before, we build the API query endpoint by concatenating the generic part of the endpoint "character", followed by the ID of the desired character.
+
+```elixir
+id = 13
+single_character_endpoint = rick_and_morty_api_base_url <> "character" <> "/" <> to_string(id)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+"https://rickandmortyapi.com/api/character/13"
+```
+
+As before, we query the API, just this time we will not slowly destructure the results for our needs, but will rather use _deep pattern-matching_ to assign the information we want to variables, succinctly. In this data reshaping action, we are getting all the information specified and provided by the API, creating a `map` object with the results, for consumption in our LiveView application.
+
+```elixir
+{:ok,
+ %{
+   status: 200,
+   body: %{
+     "id" => id,
+     "name" => name,
+     "status" => status,
+     "species" => species,
+     "type" => type,
+     "gender" => gender,
+     "origin" => %{"name" => origin_name, "url" => origin_url},
+     "location" => %{"name" => location_name, "url" => location_url},
+     "image" => avatar,
+     "episode" => episode,
+     "url" => url,
+     "created" => created
+   }
+ }} = Req.get(single_character_endpoint)
+
+%{
+  id: id,
+  avatar: avatar,
+  name: name,
+  status: status,
+  species: species,
+  type: type,
+  gender: gender,
+  origin: %{origin_name: origin_name, origin_url: origin_url},
+  location: %{location_name: location_name, location_url: location_url},
+  episode: episode,
+  url: url,
+  created: created
+}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  id: 13,
+  name: "Alien Googah",
+  status: "unknown",
+  type: "",
+  origin: %{origin_name: "unknown", origin_url: ""},
+  location: %{
+    location_url: "https://rickandmortyapi.com/api/location/20",
+    location_name: "Earth (Replacement Dimension)"
+  },
+  url: "https://rickandmortyapi.com/api/character/13",
+  species: "Alien",
+  avatar: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+  gender: "unknown",
+  created: "2017-11-04T20:33:30.779Z",
+  episode: ["https://rickandmortyapi.com/api/episode/31"]
+}
 ```
