@@ -2170,7 +2170,7 @@ character_list_struct =
 
 With the character list built, we have exactly what we want to present a list of characters. As a user interacts with that list, they will want to see a single character's full profile, which is why we need to query the API to get that information.
 
-As before, we build the API query endpoint by concatenating the generic part of the endpoint "character", followed by the ID of the desired character.
+As before, we build the API query endpoint by concatenating the generic part of the endpoint "character", followed by the ID of the desired character, as documented: [_Get a single character_](https://rickandmortyapi.com/documentation/#get-a-single-character).
 
 ```elixir
 id = 17
