@@ -1941,7 +1941,7 @@ character_list =
 
 ## Visualising the completed character list
 
-Now, we can use the `kino_explorer` library to visualise a table of our characters.
+Now, we can use the `kino_explorer` library—built on top of [Explorer](https://hexdocs.pm/explorer/Explorer.DataFrame.html#relocate/3), a tool to _explore_ two-dimensional data—to visualise a table of all our characters.
 
 This is a little detour from the building of our application, but it's useful for us to visualise this information in a tabular view, to ensure that our two-dimensional structure (above), holds the information we actually want to see.
 
@@ -1952,7 +1952,9 @@ require Explorer.DataFrame
 character_data = character_list |> Explorer.DataFrame.new()
 ```
 
-We don't like the column order, preferring to have the `avatar` column last, so we reorder the columns. Next, instead of lowercase key names, we rename them all to a nicer, capitalised, human representation using `Explorer` functions.
+We don't like the column order, preferring to have the `avatar` column last, so we reorder the columns ([`relocate/2` function](https://hexdocs.pm/explorer/Explorer.DataFrame.html#relocate/3)).
+
+Next, instead of lowercase key names, we rename ([`rename/2`](https://hexdocs.pm/explorer/Explorer.DataFrame.html#rename/2)) them all to a nicer, capitalised, human representation using `Explorer`.
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
@@ -2242,3 +2244,25 @@ As before, we query the API, just this time we will not slowly destructure the r
   episode: ["https://rickandmortyapi.com/api/episode/3"]
 }
 ```
+
+## References
+
+Dog, F. the M. W. (2016, February 24). Answer to ‘How do you check for the type of variable in Elixir’. Stack Overflow. https://stackoverflow.com/a/35608087
+
+McCord, C. (2017, April 6). Is there an elixir function that prints out the type of a value and display its fields? - Questions / Help. Elixir Programming Language Forum. https://elixirforum.com/t/is-there-an-elixir-function-that-prints-out-the-type-of-a-value-and-display-its-fields/4478/3
+
+MDN Web Docs. (2023, July 3). Working with JSON - Learn web development | MDN. https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/JSON
+
+Explorer.DataFrame—Explorer v0.7.1. (2023, September 25). https://hexdocs.pm/explorer/Explorer.DataFrame.html#rename/2
+
+Fuhrmann, A. (2023). The Rick and Morty API. The Rick and Morty API. https://rickandmortyapi.com/
+
+Fuhrmann, A. (2023). Rick and Morty API Documentation. Documentation. https://rickandmortyapi.com/documentation
+
+Mach, W. (2023). Req [Elixir]. https://github.com/wojtekmach/req (Original work published 2021)
+
+Req—Req v0.4.3. (2023, September 13). Req Is a Batteries-Included HTTP Client for Elixir. https://hexdocs.pm/req/readme.html
+
+Learning resources. (2023, September 25). Elixir-Lang.Github.Com. https://elixir-lang.org/learning.html
+
+Assigns and HEEx templates—Phoenix LiveView v0.20.0. (2023, September 22). https://hexdocs.pm/phoenix_live_view/assigns-eex.html
