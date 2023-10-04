@@ -5,7 +5,8 @@
 ```elixir
 Mix.install([
   {:req, "~> 0.4.3"},
-  {:kino_explorer, "~> 0.1.4"}
+  {:kino_explorer, "~> 0.1.4"},
+  {:exconstructor, "~> 1.2"}
 ])
 ```
 
@@ -13,10 +14,11 @@ Mix.install([
 
 ```
 Resolving Hex dependencies...
-Resolution completed in 0.935s
+Resolution completed in 1.25s
 New:
   aws_signature 0.3.1
-  castore 1.0.3
+  castore 1.0.4
+  exconstructor 1.2.10
   explorer 0.7.1
   finch 0.16.0
   fss 0.1.1
@@ -35,6 +37,7 @@ New:
   telemetry 1.2.1
 * Getting req (Hex package)
 * Getting kino_explorer (Hex package)
+* Getting exconstructor (Hex package)
 * Getting explorer (Hex package)
 * Getting kino (Hex package)
 * Getting table (Hex package)
@@ -73,6 +76,9 @@ Generated jason app
 ==> hpax
 Compiling 4 files (.ex)
 Generated hpax app
+==> exconstructor
+Compiling 1 file (.ex)
+Generated exconstructor app
 ==> fss
 Compiling 4 files (.ex)
 Generated fss app
@@ -91,7 +97,7 @@ Generated rustler_precompiled app
 ==> explorer
 Compiling 24 files (.ex)
 
-19:58:56.208 [debug] Copying NIF from cache and extracting to /Users/sacha/Library/Caches/mix/installs/elixir-1.15.2-erts-14.0.2/ce71214e2701037d0080231f2d64b8c6/_build/dev/lib/explorer/priv/native/libexplorer-v0.7.1-nif-2.15-x86_64-apple-darwin.so
+12:06:13.446 [debug] Copying NIF from cache and extracting to /Users/sacha/Library/Caches/mix/installs/elixir-1.15.2-erts-14.0.2/da562b3ca1bc8b405d623bde0702f944/_build/dev/lib/explorer/priv/native/libexplorer-v0.7.1-nif-2.15-x86_64-apple-darwin.so
 Generated explorer app
 ==> kino_explorer
 Compiling 4 files (.ex)
@@ -163,17 +169,18 @@ character_list_response = Req.get(character_list_endpoint)
    status: 200,
    headers: %{
      "access-control-allow-origin" => ["*"],
-     "age" => ["1468"],
+     "age" => ["0"],
      "cache-control" => ["max-age=259200"],
      "content-length" => ["19496"],
      "content-type" => ["application/json; charset=utf-8"],
-     "date" => ["Mon, 02 Oct 2023 17:21:44 GMT"],
+     "date" => ["Wed, 04 Oct 2023 10:06:51 GMT"],
      "etag" => ["W/\"4c28-8Xn6OSgPYZqE/r+q8L2TTeK0Efo\""],
-     "expires" => ["Thu, 05 Oct 2023 16:57:16 GMT"],
+     "expires" => ["Sat, 07 Oct 2023 10:06:51 GMT"],
      "server" => ["Netlify"],
      "strict-transport-security" => ["max-age=31536000"],
+     "transfer-encoding" => ["chunked"],
      "vary" => ["Accept-Encoding"],
-     "x-nf-request-id" => ["01HBRPHZB6A2A35EHXVMQPZAQB"],
+     "x-nf-request-id" => ["01HBX2F41CJJDW6Q8ZYD608PTQ"],
      "x-powered-by" => ["Express"]
    },
    body: %{
@@ -1945,7 +1952,7 @@ Now, we can use the `kino_explorer` library—built on top of [Explorer](https:/
 
 This is a little detour from the building of our application, but it's useful for us to visualise this information in a tabular view, to ensure that our two-dimensional structure (above), holds the information we actually want to see.
 
-<!-- livebook:{"attrs":{"assign_to":"character_data","collect":true,"data_frame":"character_list","data_frame_alias":"Elixir.Explorer.DataFrame","is_data_frame":false,"lazy":true,"missing_require":"Elixir.Explorer.DataFrame","operations":[]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
+<!-- livebook:{"attrs":{"assign_to":"character_data","collect":true,"data_frame":"character_list","data_frame_alias":"Elixir.Explorer.DataFrame","is_data_frame":false,"missing_require":"Elixir.Explorer.DataFrame","operations":[]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
 
 ```elixir
 require Explorer.DataFrame
@@ -1984,19 +1991,20 @@ defmodule RickAndMorty.CharacterList do
 
   defstruct [
     :id,
-    :avatar,
+    :image,
     :name,
     :species,
     :status
   ]
+
+  use ExConstructor
 end
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-{:module, RickAndMorty.CharacterList, <<70, 79, 82, 49, 0, 0, 9, ...>>,
- %RickAndMorty.CharacterList{id: nil, avatar: nil, name: nil, species: nil, status: nil}}
+{:module, RickAndMorty.CharacterList, <<70, 79, 82, 49, 0, 0, 12, ...>>, :ok}
 ```
 
 Now, we will simply duplicate the data reshaping function we used previously, replacing only the building of the maps representing rows, using the Rick and Morty character list `struct`.
@@ -2016,7 +2024,7 @@ character_list_struct =
       name: name,
       species: species,
       status: status,
-      avatar: image
+      image: image
     }
   end)
 ```
@@ -2027,140 +2035,140 @@ character_list_struct =
 [
   %RickAndMorty.CharacterList{
     id: 1,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
     name: "Rick Sanchez",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 2,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
     name: "Morty Smith",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 3,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
     name: "Summer Smith",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 4,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
     name: "Beth Smith",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 5,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
     name: "Jerry Smith",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 6,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
     name: "Abadango Cluster Princess",
     species: "Alien",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 7,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
     name: "Abradolf Lincler",
     species: "Human",
     status: "unknown"
   },
   %RickAndMorty.CharacterList{
     id: 8,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
     name: "Adjudicator Rick",
     species: "Human",
     status: "Dead"
   },
   %RickAndMorty.CharacterList{
     id: 9,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
     name: "Agency Director",
     species: "Human",
     status: "Dead"
   },
   %RickAndMorty.CharacterList{
     id: 10,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
     name: "Alan Rails",
     species: "Human",
     status: "Dead"
   },
   %RickAndMorty.CharacterList{
     id: 11,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
     name: "Albert Einstein",
     species: "Human",
     status: "Dead"
   },
   %RickAndMorty.CharacterList{
     id: 12,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
     name: "Alexander",
     species: "Human",
     status: "Dead"
   },
   %RickAndMorty.CharacterList{
     id: 13,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
     name: "Alien Googah",
     species: "Alien",
     status: "unknown"
   },
   %RickAndMorty.CharacterList{
     id: 14,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
     name: "Alien Morty",
     species: "Alien",
     status: "unknown"
   },
   %RickAndMorty.CharacterList{
     id: 15,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
     name: "Alien Rick",
     species: "Alien",
     status: "unknown"
   },
   %RickAndMorty.CharacterList{
     id: 16,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
     name: "Amish Cyborg",
     species: "Alien",
     status: "Dead"
   },
   %RickAndMorty.CharacterList{
     id: 17,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
     name: "Annie",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 18,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
     name: "Antenna Morty",
     species: "Human",
     status: "Alive"
   },
   %RickAndMorty.CharacterList{
     id: 19,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
     name: "Antenna Rick",
     species: "Human",
     status: "unknown"
   },
   %RickAndMorty.CharacterList{
     id: 20,
-    avatar: "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
+    image: "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
     name: "Ants in my Eyes Johnson",
     species: "Human",
     status: "unknown"
@@ -2240,8 +2248,8 @@ As before, we query the API, just this time we will not slowly destructure the r
   species: "Human",
   avatar: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
   gender: "Female",
-  created: "2017-11-04T22:21:24.481Z",
-  episode: ["https://rickandmortyapi.com/api/episode/3"]
+  episode: ["https://rickandmortyapi.com/api/episode/3"],
+  created: "2017-11-04T22:21:24.481Z"
 }
 ```
 
@@ -2279,9 +2287,176 @@ body
   url: "https://rickandmortyapi.com/api/character/17",
   species: "Human",
   gender: "Female",
-  created: "2017-11-04T22:21:24.481Z",
-  episode: ["https://rickandmortyapi.com/api/episode/3"]
+  episode: ["https://rickandmortyapi.com/api/episode/3"],
+  created: "2017-11-04T22:21:24.481Z"
 }
+```
+
+## Improving the list of characters response
+
+Now that we have explored using `Req.get` in an expanded capacity to take more load off us for a single character profile query, we return full circle and modify our character list query in the same way, to obtain keys as atoms.
+
+As we already know from before, our `body` response will contain two keys: `info` and `response`. As this is a misshaped map, we will take the `response` key (our character list), enumerating each map within the list, converting it to the `CharacterList` structure previously defined.
+
+This provides us with the data structure we need for the `index` view, the character list.
+
+```elixir
+{:ok, %{body: body}} =
+  Req.get(
+    base_url: rick_and_morty_api_base_url,
+    url: "character",
+    decode_json: [keys: :atoms!]
+  )
+
+body.results
+|> Enum.map(fn x -> RickAndMorty.CharacterList.new(x) end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[
+  %RickAndMorty.CharacterList{
+    id: 1,
+    image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+    name: "Rick Sanchez",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 2,
+    image: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+    name: "Morty Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 3,
+    image: "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+    name: "Summer Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 4,
+    image: "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+    name: "Beth Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 5,
+    image: "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+    name: "Jerry Smith",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 6,
+    image: "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+    name: "Abadango Cluster Princess",
+    species: "Alien",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 7,
+    image: "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+    name: "Abradolf Lincler",
+    species: "Human",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 8,
+    image: "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+    name: "Adjudicator Rick",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 9,
+    image: "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+    name: "Agency Director",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 10,
+    image: "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+    name: "Alan Rails",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 11,
+    image: "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
+    name: "Albert Einstein",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 12,
+    image: "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
+    name: "Alexander",
+    species: "Human",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 13,
+    image: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
+    name: "Alien Googah",
+    species: "Alien",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 14,
+    image: "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
+    name: "Alien Morty",
+    species: "Alien",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 15,
+    image: "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
+    name: "Alien Rick",
+    species: "Alien",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 16,
+    image: "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
+    name: "Amish Cyborg",
+    species: "Alien",
+    status: "Dead"
+  },
+  %RickAndMorty.CharacterList{
+    id: 17,
+    image: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+    name: "Annie",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 18,
+    image: "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
+    name: "Antenna Morty",
+    species: "Human",
+    status: "Alive"
+  },
+  %RickAndMorty.CharacterList{
+    id: 19,
+    image: "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
+    name: "Antenna Rick",
+    species: "Human",
+    status: "unknown"
+  },
+  %RickAndMorty.CharacterList{
+    id: 20,
+    image: "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
+    name: "Ants in my Eyes Johnson",
+    species: "Human",
+    status: "unknown"
+  }
+]
 ```
 
 ## References

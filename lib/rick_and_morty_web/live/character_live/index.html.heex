@@ -7,7 +7,7 @@
   rows={@streams.characters}
   row_click={fn {_id, character} -> JS.navigate(~p"/character/#{character}") end}
 >
-  <:col :let={{_id, character}} label="Avatar"><img src={character.avatar} /></:col>
+  <:col :let={{_id, character}} label="Avatar"><img src={character.image} /></:col>
   <:col :let={{_id, character}} label="Name"><%= character.name %></:col>
   <:col :let={{_id, character}} label="Species"><%= character.species %></:col>
   <:col :let={{_id, character}} label="Status"><%= character.status %></:col>

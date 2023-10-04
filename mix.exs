@@ -51,6 +51,7 @@ defmodule RickAndMorty.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:req, "~> 0.4.3"},
+      {:exconstructor, "~> 1.2"}
     ]
   end
 

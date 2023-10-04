@@ -1,8 +1,9 @@
 defmodule RickAndMorty.CharacterList do
+  use ExConstructor
 
   defstruct [
     :id,
-    :avatar,
+    :image,
     :name,
     :species,
     :status

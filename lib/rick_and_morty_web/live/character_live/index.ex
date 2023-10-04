@@ -1,26 +1,9 @@
 defmodule RickAndMortyWeb.CharacterLive.Index do
   use RickAndMortyWeb, :live_view
 
-  @character_list [
-    %RickAndMorty.CharacterList{
-      id: 1,
-      avatar: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
-      name: "Rick Sanchez",
-      species: "Human",
-      status: "Alive"
-},
-    %RickAndMorty.CharacterList{
-      id: 2,
-      avatar: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
-      name: "Morty Smith",
-      species: "Human",
-      status: "Alive"
-    }
-  ]
-
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :characters, @character_list)}
+    {:ok, stream(socket, :characters, RickAndMorty.API.get_characters().results)}
   end
 
   @impl true
