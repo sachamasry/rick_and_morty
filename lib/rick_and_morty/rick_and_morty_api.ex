@@ -53,6 +53,7 @@ defmodule RickAndMorty.API do
   def get_characters(page \\ 1) do
     case Req.get(base_url: @rick_and_morty_api_base_url,
           url: @character_list_endpoint_fragment,
+          params: [page: page],
           decode_json: [keys: :atoms!]) do
       {:ok, %{body: body}} ->
         %{results:
