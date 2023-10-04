@@ -29,7 +29,7 @@ defmodule RickAndMortyWeb.CharacterLive.Show do
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:character, @character)}
+     |> assign(:character, RickAndMorty.API.get_single_character(id))}
   end
 
   defp page_title(:show), do: "Show Character"

@@ -2175,7 +2175,7 @@ With the character list built, we have exactly what we want to present a list of
 As before, we build the API query endpoint by concatenating the generic part of the endpoint "character", followed by the ID of the desired character, as documented: [_Get a single character_](https://rickandmortyapi.com/documentation/#get-a-single-character).
 
 ```elixir
-id = 17
+id = "17"
 single_character_endpoint = rick_and_morty_api_base_url <> "character" <> "/" <> to_string(id)
 ```
 
@@ -2239,6 +2239,45 @@ As before, we query the API, just this time we will not slowly destructure the r
   url: "https://rickandmortyapi.com/api/character/17",
   species: "Human",
   avatar: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+  gender: "Female",
+  created: "2017-11-04T22:21:24.481Z",
+  episode: ["https://rickandmortyapi.com/api/episode/3"]
+}
+```
+
+Even though it's shorter, it is still very verbose and prone to errors, such as misspelling any of the expected keys when converting the result to a map. Fortunately, the `Req` library lets us do much of the work within its middleware; Req is composed of a series of steps which are invisible from its high-level usage, all of which can be modified through passed options.
+
+[`Req.get`](https://hexdocs.pm/req/Req.html#get/2) offers a wide range of options covered by the [`new/1` request struct](https://hexdocs.pm/req/Req.html#new/1). For starters, instead of building our very own URL endpoint for every type of request, we can give `Req.get` a `base_url` as well as a `url` key, and it will combine them internally into a complete URL to query. Note that we use `:id` as a placeholder in the path, which we then satisfy with the [`path_params`](https://hexdocs.pm/req/Req.Steps.html#put_path_params/1) option list, substituting the `id` variable with the value of the desired Character ID.
+
+One of the steps taking place in the request is the conversion of the received JSON payload to an internal data structure. By default, the [`Jason.decode`](https://hexdocs.pm/jason/1.4.1/Jason.html#decode/2) function decodes keys as binary strings. To get a map of keys which are atoms, we pass a `decode_json` option, asking for keys to be converted to atoms, specifically existing atoms (atoms already defined in previous requests), because _"... Since the atoms are not garbage collected, this can pose a DoS attack vector when used on user-controlled data"_.
+
+As before, we pattern-match to get the response body, and use that variable for building our character profile.
+
+```elixir
+{:ok, %{body: body}} =
+  Req.get(
+    base_url: rick_and_morty_api_base_url,
+    url: "character/:id",
+    path_params: [id: id],
+    decode_json: [keys: :atoms!]
+  )
+
+body
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{
+  id: 17,
+  name: "Annie",
+  status: "Alive",
+  type: "",
+  origin: %{name: "Earth (C-137)", url: "https://rickandmortyapi.com/api/location/1"},
+  location: %{name: "Anatomy Park", url: "https://rickandmortyapi.com/api/location/5"},
+  image: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
+  url: "https://rickandmortyapi.com/api/character/17",
+  species: "Human",
   gender: "Female",
   created: "2017-11-04T22:21:24.481Z",
   episode: ["https://rickandmortyapi.com/api/episode/3"]

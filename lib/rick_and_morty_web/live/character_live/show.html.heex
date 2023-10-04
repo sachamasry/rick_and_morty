@@ -4,14 +4,14 @@
 </.header>
 
 <div style="margin: 1.5rem 0;">
-  <img src={@character.avatar} />
+  <img src={@character.image} />
 </div>
 
 <.list>
   <:item title="Type"><%= @character.type %></:item>
   <:item title="Gender"><%= @character.gender %></:item>
-  <:item title="Origin"><a href={@character.origin.origin_url}><%= @character.origin.origin_name %></a></:item>
-  <:item title="Last known location"><a href={@character.location.location_url}><%= @character.location.location_name %></a></:item>
+  <:item title="Origin"><a href={@character.origin.url}><%= @character.origin.name %></a></:item>
+  <:item title="Last known location"><a href={@character.location.url}><%= @character.location.name %></a></:item>
 </.list>
 
 <.back navigate={~p"/characters"}>Back to character list</.back>
