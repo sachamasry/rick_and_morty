@@ -3,6 +3,9 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    socket
+    |> assign(page: 1)
+
     {:ok, stream(socket, :characters, RickAndMorty.API.get_characters().results)}
   end
 

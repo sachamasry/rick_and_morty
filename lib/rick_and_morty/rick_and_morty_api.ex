@@ -50,7 +50,7 @@ defmodule RickAndMorty.API do
   @doc"""
   Gets full character list
   """
-  def get_characters() do
+  def get_characters(page \\ 1) do
     case Req.get(base_url: @rick_and_morty_api_base_url,
           url: @character_list_endpoint_fragment,
           decode_json: [keys: :atoms!]) do
