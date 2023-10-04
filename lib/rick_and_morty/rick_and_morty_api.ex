@@ -11,11 +11,12 @@ defmodule RickAndMorty.API do
 
   # Define all atoms upfront, so that the `to_existing_atom` decode call can be
   # used, ensuring no memory leak can occur
-  _ = :info
-  _ = :count
-  _ = :pages
-  _ = :next
-  _ = :prev
+  :info
+  :count
+  :page
+  :pages
+  :next
+  :prev
 
   _ = :id
   _ = :name

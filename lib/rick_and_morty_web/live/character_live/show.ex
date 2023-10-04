@@ -2,8 +2,16 @@ defmodule RickAndMortyWeb.CharacterLive.Show do
   use RickAndMortyWeb, :live_view
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(params, _session, socket) do
+    page = String.to_integer(params["return_to_page"] || "1")
+    name_filter = params["name_filter"] || ""
+    return_to_page = if page, do: "?page=" <> to_string(page), else: ""
+
+    {:ok,
+     socket
+     |> assign(:page, page)
+     |> assign(:return_to_page, return_to_page)
+     |> assign(:name_filter, "")}
   end
 
   @impl true

@@ -4,6 +4,7 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
   @impl true
   def mount(params, _session, socket) do
     page = String.to_integer(params["page"] || "1")
+    name_filter = params["name_filter"] || ""
     paging = RickAndMorty.API.get_characters(page).info
     next_page = paging.next
     previous_page = paging.prev
@@ -51,6 +52,7 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
     {:noreply, stream_insert(socket, :products, product)}
   end
 
+  # Code from PP exercises
   defp pagination_link(socket, text, page, name_filter, class) do
     live_patch(text,
       to:
