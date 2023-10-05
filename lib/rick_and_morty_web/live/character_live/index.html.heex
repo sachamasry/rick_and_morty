@@ -5,7 +5,7 @@
 <.table
   id="characters"
   rows={@streams.characters}
-  row_click={fn {_id, character} -> JS.navigate(~p"/character/#{character}?return_to_page=#{@page}") end}
+  row_click={fn {_id, character} -> JS.navigate(~p"/character/#{character}?return_to_page=#{@page}&return_to_search=#{@name_filter}") end}
 >
   <:col :let={{_id, character}} label="Avatar"><img src={character.image} /></:col>
   <:col :let={{_id, character}} label="Name"><%= character.name %></:col>
@@ -13,7 +13,7 @@
   <:col :let={{_id, character}} label="Status"><%= character.status %></:col>
   <:action :let={{_id, character}}>
     <div class="sr-only">
-      <.link navigate={~p"/character/#{character}"}>Show</.link>
+      <.link navigate={~p"/character/#{character}?return_to_page=#{@page}&return_to_search=#{@name_filter}"}>Show</.link>
     </div>
   </:action>
 </.table>
@@ -22,13 +22,13 @@
   <div class="pagination">
     <%= if @previous_page do %>
     <div class="" style="display: inline-block; margin: 1.5rem;">
-      <.link navigate={~p"/characters?page=#{@page - 1}"}>← Previous</.link>
+      <.link navigate={~p"/characters?page=#{@page - 1}&name=#{@name_filter}"}>← Previous</.link>
     </div>
     <% end %>
 
     <%= if @next_page do %>
     <div class="" style="display: inline-block; margin: 1.5rem;">
-      <.link navigate={~p"/characters?page=#{@page + 1}"}>Next →</.link>
+      <.link navigate={~p"/characters?page=#{@page + 1}&name=#{@name_filter}"}>Next →</.link>
     </div>
     <% end %>
   </div>

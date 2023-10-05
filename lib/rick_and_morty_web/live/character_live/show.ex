@@ -4,14 +4,12 @@ defmodule RickAndMortyWeb.CharacterLive.Show do
   @impl true
   def mount(params, _session, socket) do
     page = String.to_integer(params["return_to_page"] || "1")
-    name_filter = params["name_filter"] || ""
-    return_to_page = if page, do: "?page=" <> to_string(page), else: ""
+    name_filter = params["return_to_search"] || ""
 
     {:ok,
      socket
      |> assign(:page, page)
-     |> assign(:return_to_page, return_to_page)
-     |> assign(:name_filter, "")}
+     |> assign(:name, name_filter)}
   end
 
   @impl true
