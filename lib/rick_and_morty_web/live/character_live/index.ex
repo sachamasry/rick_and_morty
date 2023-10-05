@@ -11,8 +11,6 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
     previous_page = paging.prev
     characters = api_response.results
 
-    IO.puts next_page
-
     {:ok,
      socket
      |> assign(:page, page)
@@ -45,10 +43,19 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
         {:noreply, socket}
 
       characters ->
+        api_response = RickAndMorty.API.get_characters(1, name_filter)
+        paging = api_response.info
+        next_page = paging.next
+        previous_page = paging.prev
+        characters = api_response.results
+
         socket =
           socket
           |> clear_flash()
           |> assign(loading: false)
+          |> assign(:next_page, next_page)
+          |> assign(:previous_page, previous_page)
+          |> assign(:name_filter, name_filter)
           |> stream(:characters, characters, reset: true)
 
         {:noreply, socket}
