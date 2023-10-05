@@ -22,29 +22,36 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
      |> stream(:characters, characters)}
   end
 
-  @impl true
-  def handle_params(params, _url, socket) do
-    page = String.to_integer(params["page"] || "1")
-    name_filter = params["name"] || ""
-    api_response = RickAndMorty.API.get_characters(page, name_filter)
-    paging = api_response.info
-    next_page = paging.next
-    previous_page = paging.prev
-    characters = api_response.results
+  def handle_event("name-search", %{"name" => name_filter}, socket) do
+    send(self(), {:run_name_search, name_filter})
 
-    {:noreply,
-     # apply_action(socket, socket.assigns.live_action, params)}
-     socket
-     |> assign(:page_title, "All Characters")
-     |> assign(:page, page)
-     |> assign(:next_page, next_page)
-     |> assign(:previous_page, previous_page)
-     |> assign(:name_filter, name_filter)
-     |> assign(:characters, characters)}
+    socket =
+      assign(socket,
+        name_filter: name_filter,
+        loading: true
+      )
+
+    {:noreply, socket}
   end
 
-  @impl true
-  def handle_info({RickAndMortyWeb.CharacterLive.FormComponent, {:saved, product}}, socket) do
-    {:noreply, stream_insert(socket, :products, product)}
+  def handle_info({:run_name_search, name_filter}, socket) do
+    case RickAndMorty.API.get_characters(1, name_filter).results do
+      [] ->
+        socket =
+          socket
+          |> put_flash(:info, "No characters matching \"#{name_filter}\"")
+          |> stream(:characters, [], reset: true)
+
+        {:noreply, socket}
+
+      characters ->
+        socket =
+          socket
+          |> clear_flash()
+          |> assign(loading: false)
+          |> stream(:characters, characters, reset: true)
+
+        {:noreply, socket}
+    end
   end
 end

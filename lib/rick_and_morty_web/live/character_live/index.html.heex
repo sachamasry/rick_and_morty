@@ -2,6 +2,11 @@
   All Rick and Morty characters
 </.header>
 
+<form phx-change="name-search">
+  <input type="text" name="name" value=""
+         placeholder="Search by name..." />
+</form>
+
 <.table
   id="characters"
   rows={@streams.characters}

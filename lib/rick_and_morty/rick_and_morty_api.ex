@@ -18,18 +18,18 @@ defmodule RickAndMorty.API do
   :next
   :prev
 
-  _ = :id
-  _ = :name
-  _ = :status
-  _ = :type
-  _ = :origin
-  _ = :url
-  _ = :location
-  _ = :image
-  _ = :created
-  _ = :gender
-  _ = :species
-  _ = :episode
+  :id
+  :name
+  :status
+  :type
+  :origin
+  :url
+  :location
+  :image
+  :created
+  :gender
+  :species
+  :episode
 
   @doc"""
   Gets all the information on a single character with the unique ID of `id`.
