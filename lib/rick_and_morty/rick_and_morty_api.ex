@@ -9,28 +9,6 @@ defmodule RickAndMorty.API do
   @character_list_endpoint_fragment "character"
   @single_character_endpoint_fragment "character"
 
-  # Define all atoms upfront, so that the `to_existing_atom` decode call can be
-  # used, ensuring no memory leak can occur
-  :info
-  :count
-  :page
-  :pages
-  :next
-  :prev
-
-  :id
-  :name
-  :status
-  :type
-  :origin
-  :url
-  :location
-  :image
-  :created
-  :gender
-  :species
-  :episode
-
   @doc"""
   Gets all the information on a single character with the unique ID of `id`.
 
@@ -42,7 +20,7 @@ defmodule RickAndMorty.API do
     case Req.get(base_url: @rick_and_morty_api_base_url,
           url: @single_character_endpoint_fragment <> "/:id",
           path_params: [id: id],
-          decode_json: [keys: :atoms!]) do
+          decode_json: [keys: :atoms]) do
       {:ok, %{body: body}} -> body
       {:error, message} -> {:error, message}
     end
@@ -55,7 +33,7 @@ defmodule RickAndMorty.API do
     case Req.get(base_url: @rick_and_morty_api_base_url,
           url: @character_list_endpoint_fragment,
           params: [page: page, name: name_filter],
-          decode_json: [keys: :atoms!]) do
+          decode_json: [keys: :atoms]) do
       {:ok, %{body: body}} ->
         %{results:
           body.results
