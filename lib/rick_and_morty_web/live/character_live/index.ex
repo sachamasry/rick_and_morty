@@ -33,28 +33,16 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:run_name_search, _page, ""}, socket) do
-    api_response = RickAndMorty.API.get_characters()
-    paging = api_response.info
-    next_page = paging.next
-    previous_page = paging.prev
-    characters = api_response.results
-
-    socket =
-      socket
-      |> assign(:next_page, next_page)
-      |> assign(:previous_page, previous_page)
-      |> stream(:characters, characters)
-
-    {:noreply, socket}
-  end
-
   def handle_info({:run_name_search, page, name_filter}, socket) do
     case RickAndMorty.API.get_characters(1, name_filter).results do
       [] ->
         socket =
           socket
           |> put_flash(:info, "No characters matching \"#{name_filter}\"")
+          |> assign(loading: false)
+          |> assign(:page, 1)
+          |> assign(:next_page, nil)
+          |> assign(:previous_page, nil)
           |> stream(:characters, [], reset: true)
 
         {:noreply, socket}
@@ -76,7 +64,7 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
           |> assign(:name_filter, name_filter)
           |> stream(:characters, [], reset: true)
           |> stream(:characters, characters, reset: true)
-        IO.inspect(socket.assigns.streams)
+        # IO.inspect(socket.assigns.streams)
 
         {:noreply, socket}
     end
