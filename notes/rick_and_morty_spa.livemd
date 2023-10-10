@@ -13,116 +13,6 @@ Mix.install([
 <!-- livebook:{"output":true} -->
 
 ```
-Resolving Hex dependencies...
-Resolution completed in 1.25s
-New:
-  aws_signature 0.3.1
-  castore 1.0.4
-  exconstructor 1.2.10
-  explorer 0.7.1
-  finch 0.16.0
-  fss 0.1.1
-  hpax 0.1.2
-  jason 1.4.1
-  kino 0.10.0
-  kino_explorer 0.1.11
-  mime 2.0.5
-  mint 1.5.1
-  nimble_options 1.0.2
-  nimble_pool 1.0.0
-  req 0.4.3
-  rustler_precompiled 0.7.0
-  table 0.1.2
-  table_rex 4.0.0
-  telemetry 1.2.1
-* Getting req (Hex package)
-* Getting kino_explorer (Hex package)
-* Getting exconstructor (Hex package)
-* Getting explorer (Hex package)
-* Getting kino (Hex package)
-* Getting table (Hex package)
-* Getting aws_signature (Hex package)
-* Getting castore (Hex package)
-* Getting fss (Hex package)
-* Getting rustler_precompiled (Hex package)
-* Getting table_rex (Hex package)
-* Getting finch (Hex package)
-* Getting jason (Hex package)
-* Getting mime (Hex package)
-* Getting mint (Hex package)
-* Getting nimble_options (Hex package)
-* Getting nimble_pool (Hex package)
-* Getting telemetry (Hex package)
-* Getting hpax (Hex package)
-===> Analyzing applications...
-===> Compiling aws_signature
-==> table
-Compiling 5 files (.ex)
-Generated table app
-==> mime
-Compiling 1 file (.ex)
-Generated mime app
-==> nimble_options
-Compiling 3 files (.ex)
-Generated nimble_options app
-==> kino
-Compiling 41 files (.ex)
-Generated kino app
-===> Analyzing applications...
-===> Compiling telemetry
-==> jason
-Compiling 10 files (.ex)
-Generated jason app
-==> hpax
-Compiling 4 files (.ex)
-Generated hpax app
-==> exconstructor
-Compiling 1 file (.ex)
-Generated exconstructor app
-==> fss
-Compiling 4 files (.ex)
-Generated fss app
-==> table_rex
-Compiling 7 files (.ex)
-Generated table_rex app
-==> nimble_pool
-Compiling 2 files (.ex)
-Generated nimble_pool app
-==> castore
-Compiling 1 file (.ex)
-Generated castore app
-==> rustler_precompiled
-Compiling 4 files (.ex)
-Generated rustler_precompiled app
-==> explorer
-Compiling 24 files (.ex)
-
-12:06:13.446 [debug] Copying NIF from cache and extracting to /Users/sacha/Library/Caches/mix/installs/elixir-1.15.2-erts-14.0.2/da562b3ca1bc8b405d623bde0702f944/_build/dev/lib/explorer/priv/native/libexplorer-v0.7.1-nif-2.15-x86_64-apple-darwin.so
-Generated explorer app
-==> kino_explorer
-Compiling 4 files (.ex)
-Generated kino_explorer app
-==> mint
-Compiling 1 file (.erl)
-Compiling 19 files (.ex)
-Generated mint app
-==> finch
-Compiling 13 files (.ex)
-warning: Logger.warn/1 is deprecated. Use Logger.warning/2 instead
-  lib/finch/http2/pool.ex:362: Finch.HTTP2.Pool.connected/3
-
-warning: Logger.warn/1 is deprecated. Use Logger.warning/2 instead
-  lib/finch/http2/pool.ex:460: Finch.HTTP2.Pool.connected_read_only/3
-
-Generated finch app
-==> req
-Compiling 6 files (.ex)
-Generated req app
-```
-
-<!-- livebook:{"output":true} -->
-
-```
 :ok
 ```
 
@@ -169,18 +59,17 @@ character_list_response = Req.get(character_list_endpoint)
    status: 200,
    headers: %{
      "access-control-allow-origin" => ["*"],
-     "age" => ["0"],
+     "age" => ["488"],
      "cache-control" => ["max-age=259200"],
      "content-length" => ["19496"],
      "content-type" => ["application/json; charset=utf-8"],
-     "date" => ["Wed, 04 Oct 2023 10:06:51 GMT"],
+     "date" => ["Mon, 09 Oct 2023 23:57:45 GMT"],
      "etag" => ["W/\"4c28-8Xn6OSgPYZqE/r+q8L2TTeK0Efo\""],
-     "expires" => ["Sat, 07 Oct 2023 10:06:51 GMT"],
+     "expires" => ["Thu, 12 Oct 2023 23:49:37 GMT"],
      "server" => ["Netlify"],
      "strict-transport-security" => ["max-age=31536000"],
-     "transfer-encoding" => ["chunked"],
      "vary" => ["Accept-Encoding"],
-     "x-nf-request-id" => ["01HBX2F41CJJDW6Q8ZYD608PTQ"],
+     "x-nf-request-id" => ["01HCBE047N68MMJZT6CRQ2JWJN"],
      "x-powered-by" => ["Express"]
    },
    body: %{

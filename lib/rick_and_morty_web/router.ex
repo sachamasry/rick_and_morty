@@ -1,5 +1,6 @@
 defmodule RickAndMortyWeb.Router do
   use RickAndMortyWeb, :router
+  import Redirect
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -14,10 +15,10 @@ defmodule RickAndMortyWeb.Router do
     plug :accepts, ["json"]
   end
 
+  redirect "/", "/characters", :permanent, preserve_query_string: true
   scope "/", RickAndMortyWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
     live "/characters", CharacterLive.Index, :index
     live "/character/:id", CharacterLive.Show, :show
   end
