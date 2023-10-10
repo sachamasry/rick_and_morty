@@ -10,8 +10,6 @@ defmodule RickAndMorty.Application do
     children = [
       # Start the Telemetry supervisor
       RickAndMortyWeb.Telemetry,
-      # Start the Ecto repository
-      RickAndMorty.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: RickAndMorty.PubSub},
       # Start Finch
