@@ -59,17 +59,17 @@ character_list_response = Req.get(character_list_endpoint)
    status: 200,
    headers: %{
      "access-control-allow-origin" => ["*"],
-     "age" => ["488"],
+     "age" => ["135"],
      "cache-control" => ["max-age=259200"],
      "content-length" => ["19496"],
      "content-type" => ["application/json; charset=utf-8"],
-     "date" => ["Mon, 09 Oct 2023 23:57:45 GMT"],
+     "date" => ["Tue, 10 Oct 2023 18:32:28 GMT"],
      "etag" => ["W/\"4c28-8Xn6OSgPYZqE/r+q8L2TTeK0Efo\""],
-     "expires" => ["Thu, 12 Oct 2023 23:49:37 GMT"],
+     "expires" => ["Fri, 13 Oct 2023 18:30:13 GMT"],
      "server" => ["Netlify"],
      "strict-transport-security" => ["max-age=31536000"],
      "vary" => ["Accept-Encoding"],
-     "x-nf-request-id" => ["01HCBE047N68MMJZT6CRQ2JWJN"],
+     "x-nf-request-id" => ["01HCDDS7KCYK8D6NS55HN5F2KP"],
      "x-powered-by" => ["Express"]
    },
    body: %{
@@ -2130,8 +2130,8 @@ As before, we query the API, just this time we will not slowly destructure the r
   type: "",
   origin: %{origin_name: "Earth (C-137)", origin_url: "https://rickandmortyapi.com/api/location/1"},
   location: %{
-    location_url: "https://rickandmortyapi.com/api/location/5",
-    location_name: "Anatomy Park"
+    location_name: "Anatomy Park",
+    location_url: "https://rickandmortyapi.com/api/location/5"
   },
   url: "https://rickandmortyapi.com/api/character/17",
   species: "Human",
@@ -2183,169 +2183,53 @@ body
 
 ## Improving the list of characters response
 
-Now that we have explored using `Req.get` in an expanded capacity to take more load off us for a single character profile query, we return full circle and modify our character list query in the same way, to obtain keys as atoms.
+Now that we have explored using `Req.get` in an expanded capacity to take more load off us for a single character profile query, we return full circle and modify our character list query in the same way, to obtain keys as atoms. Let us also extend the query to include page number and `name`parameters.
 
 As we already know from before, our `body` response will contain two keys: `info` and `response`. As this is a misshaped map, we will take the `response` key (our character list), enumerating each map within the list, converting it to the `CharacterList` structure previously defined.
 
 This provides us with the data structure we need for the `index` view, the character list.
 
 ```elixir
-{:ok, %{body: body}} =
-  Req.get(
-    base_url: rick_and_morty_api_base_url,
-    url: "character",
-    decode_json: [keys: :atoms!]
-  )
-
-body.results
-|> Enum.map(fn x -> RickAndMorty.CharacterList.new(x) end)
+page = Kino.Input.number("Page number", default: 1)
+page = 1
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-[
-  %RickAndMorty.CharacterList{
-    id: 1,
-    image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
-    name: "Rick Sanchez",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 2,
-    image: "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
-    name: "Morty Smith",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 3,
-    image: "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
-    name: "Summer Smith",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 4,
-    image: "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
-    name: "Beth Smith",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 5,
-    image: "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
-    name: "Jerry Smith",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 6,
-    image: "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
-    name: "Abadango Cluster Princess",
-    species: "Alien",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 7,
-    image: "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
-    name: "Abradolf Lincler",
-    species: "Human",
-    status: "unknown"
-  },
-  %RickAndMorty.CharacterList{
-    id: 8,
-    image: "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
-    name: "Adjudicator Rick",
-    species: "Human",
-    status: "Dead"
-  },
-  %RickAndMorty.CharacterList{
-    id: 9,
-    image: "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
-    name: "Agency Director",
-    species: "Human",
-    status: "Dead"
-  },
-  %RickAndMorty.CharacterList{
-    id: 10,
-    image: "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
-    name: "Alan Rails",
-    species: "Human",
-    status: "Dead"
-  },
-  %RickAndMorty.CharacterList{
-    id: 11,
-    image: "https://rickandmortyapi.com/api/character/avatar/11.jpeg",
-    name: "Albert Einstein",
-    species: "Human",
-    status: "Dead"
-  },
-  %RickAndMorty.CharacterList{
-    id: 12,
-    image: "https://rickandmortyapi.com/api/character/avatar/12.jpeg",
-    name: "Alexander",
-    species: "Human",
-    status: "Dead"
-  },
-  %RickAndMorty.CharacterList{
-    id: 13,
-    image: "https://rickandmortyapi.com/api/character/avatar/13.jpeg",
-    name: "Alien Googah",
-    species: "Alien",
-    status: "unknown"
-  },
-  %RickAndMorty.CharacterList{
-    id: 14,
-    image: "https://rickandmortyapi.com/api/character/avatar/14.jpeg",
-    name: "Alien Morty",
-    species: "Alien",
-    status: "unknown"
-  },
-  %RickAndMorty.CharacterList{
-    id: 15,
-    image: "https://rickandmortyapi.com/api/character/avatar/15.jpeg",
-    name: "Alien Rick",
-    species: "Alien",
-    status: "unknown"
-  },
-  %RickAndMorty.CharacterList{
-    id: 16,
-    image: "https://rickandmortyapi.com/api/character/avatar/16.jpeg",
-    name: "Amish Cyborg",
-    species: "Alien",
-    status: "Dead"
-  },
-  %RickAndMorty.CharacterList{
-    id: 17,
-    image: "https://rickandmortyapi.com/api/character/avatar/17.jpeg",
-    name: "Annie",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 18,
-    image: "https://rickandmortyapi.com/api/character/avatar/18.jpeg",
-    name: "Antenna Morty",
-    species: "Human",
-    status: "Alive"
-  },
-  %RickAndMorty.CharacterList{
-    id: 19,
-    image: "https://rickandmortyapi.com/api/character/avatar/19.jpeg",
-    name: "Antenna Rick",
-    species: "Human",
-    status: "unknown"
-  },
-  %RickAndMorty.CharacterList{
-    id: 20,
-    image: "https://rickandmortyapi.com/api/character/avatar/20.jpeg",
-    name: "Ants in my Eyes Johnson",
-    species: "Human",
-    status: "unknown"
-  }
-]
+1
+```
+
+```elixir
+name_search = Kino.Input.text("Name to search for", default: "")
+name_search = "gonzo"
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+"gonzo"
+```
+
+```elixir
+{:ok, %{body: body}} =
+  Req.get(
+    base_url: rick_and_morty_api_base_url,
+    url: "character",
+    params: [page: page, name: name_search],
+    decode_json: [keys: :atoms]
+  )
+
+# body.results
+# |> Enum.map(fn x -> RickAndMorty.CharacterList.new(x) end)
+
+body
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{error: "There is nothing here"}
 ```
 
 ## References

@@ -38,7 +38,7 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
       [] ->
         socket =
           socket
-          |> put_flash(:info, "No characters matching \"#{name_filter}\"")
+          |> put_flash(:error, "No characters matching \"#{name_filter}\"")
           |> assign(loading: false)
           |> assign(:page, 1)
           |> assign(:next_page, nil)
@@ -64,7 +64,6 @@ defmodule RickAndMortyWeb.CharacterLive.Index do
           |> assign(:name_filter, name_filter)
           |> stream(:characters, [], reset: true)
           |> stream(:characters, characters, reset: true)
-        # IO.inspect(socket.assigns.streams)
 
         {:noreply, socket}
     end

@@ -34,6 +34,9 @@ defmodule RickAndMorty.API do
           url: @character_list_endpoint_fragment,
           params: [page: page, name: name_filter],
           decode_json: [keys: :atoms]) do
+      {:ok, %{body:
+               %{error: "There is nothing here"}}} ->
+        %{results: [], info: %{count: 0, next: nil, prev: nil, pages: 1}}
       {:ok, %{body: body}} ->
         %{results:
           body.results
