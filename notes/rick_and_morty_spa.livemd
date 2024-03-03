@@ -10,12 +10,6 @@ Mix.install([
 ])
 ```
 
-<!-- livebook:{"output":true} -->
-
-```
-:ok
-```
-
 ## Introduction
 
 An exercise in consuming the Rick and Morty API, and presenting it in the form of a single page application (SPA), in Elixir LiveView.

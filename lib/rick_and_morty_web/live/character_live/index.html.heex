@@ -3,7 +3,7 @@
 </.header>
 
 <form phx-change="name-search">
-  <input type="text" name="name" value={@name_filter}
+  <input phx-mounted={JS.focus()} type="text" name="name" value={@name_filter}
          placeholder="Search by name..." />
 </form>
 
